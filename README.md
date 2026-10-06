@@ -8,7 +8,9 @@ Instead of treating a card, preview, drawer, and full view as unrelated UI, Cont
 
 ## Status
 
-Experimental. The first goal is not to ship a component library. It is to validate whether continuity across 3+ interface states can become a useful React primitive.
+Experimental. v0 is a working three-state music interaction built directly with
+Motion. A useful React primitive remains unproven: one persistent React tree handles
+this experiment without a Continuity abstraction.
 
 ## First experiment
 
@@ -36,8 +38,81 @@ If the experiment proves useful, the primitive will be extracted from the implem
 
 ## Site
 
-Planned: `continuity.francozeta.com`
+Live: [continuity.francozeta.com](https://continuity.francozeta.com).
+
+For the current implementation and verification evidence, read
+[`docs/experiment-v0.md`](docs/experiment-v0.md). Research and source links live in
+[`docs/research.md`](docs/research.md).
 
 ## License
 
 TBD
+
+## Local development
+
+The existing Next.js App Router setup uses React, TypeScript, Tailwind CSS 4,
+and pnpm. Keep this app as the experiment host.
+
+```sh
+pnpm install
+pnpm dev
+```
+
+Open http://localhost:3000. `pnpm lint` checks source and `pnpm build` checks
+production compilation. Node.js 20.9+ is required by Next.js; the package manager
+version is recorded in `package.json`.
+
+The appearance selector compares **Default** (static, anonymous placeholders)
+with **Apple Music** (an independent applied interface study). Both use the same
+three persistent parts and presentation state. Switch appearance while expanded
+to compare the same context; normalized progress and selected track are retained.
+The selector pauses audio when switching.
+
+Use the compact surface to open preview, then **Open player**. The downward
+chevron and Escape return one state at a time. Default remains silent. The Apple
+Music study uses real public catalog metadata, artwork and streamed short previews;
+Play/Pause, seek, volume, previous/next and the queue control that preview audio.
+Favorites stay local and track-specific. The integrated queue shows upcoming tracks
+and actual playback history; selecting a row retains the player and audio owner.
+The track-actions popover includes Listen on Apple Music to open the source song.
+The sample selects Underworld, Aphex Twin and Burial.
+There is no account connection or full-song playback. Catalog examples are
+recorded in `app/apple-music-tracks.ts`; external media can become unavailable.
+
+The page contains the selector and experiment. Buttons, sliders and the track-actions
+popover use shadcn's Base UI primitives. Skeleton has no pulse or shimmer. The
+applied player takes cues from [Apple's current player controls](https://support.apple.com/en-euro/guide/iphone/iph676daac9b/27/ios/27).
+Contextual controls use a brief blur/fade, following [Jakub's shared-layout example](https://jakub.kr/work/shared-layout-animations),
+while stable shared parts stay outside presence. Play/Pause retains the
+[transitions.dev](https://transitions.dev) icon swap. Motion owns layout and scale
+correction.
+
+The applied player has thumb-free progress/volume bars with 44px drag targets and
+keyboard focus on the track, an artwork-derived backdrop, an edge-to-edge cover
+fading into the player and a top dismissal chevron. Default retains its neutral
+slider styling.
+
+Default is a developer-facing experiment baseline, not a released component API.
+The comparison evaluates customization without inventing a Continuity runtime.
+
+Preview and player become bottom-aligned sheets at narrow sizes. They remain
+nonmodal regions, so Tab follows the document. Resize either
+expanded state without resetting the track. Reduced motion replaces spatial travel
+with an immediate layout change and a short contextual fade.
+
+## Deployment
+
+The Vercel project is `continuity` in the `franco-zetas-projects` scope. Production
+uses the domain above. `vercel.json` selects Next.js, and the project environment
+sets `ENABLE_EXPERIMENTAL_COREPACK=1` for Production and Preview so Vercel uses
+the pnpm version pinned in `package.json`.
+
+From an authenticated checkout:
+
+```sh
+vercel link --project continuity --scope franco-zetas-projects
+vercel deploy --prod --scope franco-zetas-projects
+```
+
+Deployments currently run through the CLI. `.vercelignore` excludes local build
+output, browser captures and environment files from uploads.

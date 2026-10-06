@@ -47,6 +47,13 @@ Shared identity candidates:
 - title
 - artist
 
+The current comparison has two appearances over the same persistent track owner:
+an anonymous Default study with static placeholders and an Apple Music-style
+application with real public catalog data and short preview audio. Default
+represents a possible developer baseline; the applied view investigates how it
+holds up with real content, controls and immersive artwork. Neither establishes
+a stable library API or an Apple Music account integration.
+
 ## Validation
 
 The experiment is successful if:
@@ -85,3 +92,19 @@ Do not add multiple animation engines or adapters until the experiment proves a 
 Implementation follows evidence.
 
 Do not design a large public API before the first interaction works.
+
+## Finding from v0
+
+The interaction can be implemented with one persistent track owner, one local
+presentation state, CSS grid and Motion. The three identities occur once; no
+pairwise graph mapping is needed. Stateful playback/saved/seek probes survive
+presentation changes and resizing through ordinary React state ownership.
+
+This supports the visual interaction hypothesis, subject to human review. It does
+not establish a missing React primitive. Three states alone are not differentiation:
+Motion identities can already participate in more than two layouts.
+
+Do not extract `Entity / State / Part` from this result. Future evidence would have
+to show repeated coordination across independent render owners or real portals,
+and demonstrate that a smaller semantic layer improves the direct implementation.
+Those concerns have not been exercised by this in-canvas, single-entity study.
