@@ -106,3 +106,19 @@ snapshot at mount. Projection layout options are also established at creation.
 Stable `layout`/IDs with a reactive instant transition avoided remounting or
 patching Motion internals. These are integration observations, not proof of a core
 Continuity responsibility. See the evidence log for the failed and repaired cases.
+
+### Applied music study — 2026-10-06
+
+- [Apple's iOS 27 player guide](https://support.apple.com/en-euro/guide/iphone/iph676daac9b/27/ios/27)
+  and its MiniPlayer/Now Playing screenshots informed the applied controls,
+  immersive artwork, favorite, scrubbing, volume and queue. This is an independent
+  web study with short catalog previews, not an Apple Music account integration.
+- [Jakub's shared-layout example](https://jakub.kr/work/shared-layout-animations)
+  keeps shared parts outside presence and blurs/fades contextual controls.
+  [His interface details](https://jakub.kr/writing/details-that-make-interfaces-feel-better)
+  and [interfaces.dev's cheat sheet](https://interfaces.dev/cheat-sheet) reinforce
+  restrained, interruptible icon transitions. Blur softens the lifecycle; unnamed
+  Motion position projection fixes the actual ancestor-scale distortion observed
+  in our compact controls. Neither concern requires a Continuity runtime.
+- Public US catalog samples are recorded in `app/apple-music-tracks.ts`. Media
+  remains external and can fail; the player exposes an error and source-song link.

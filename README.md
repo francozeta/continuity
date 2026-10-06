@@ -62,19 +62,35 @@ Open http://localhost:3000. `pnpm lint` checks source and `pnpm build` checks
 production compilation. Node.js 20.9+ is required by Next.js; the package manager
 version is recorded in `package.json`.
 
-Use the compact surface to open preview, then **Open player**. The downward
-chevron and Escape return one state at a time. This version uses static cover and
-text placeholders: no mock track, artwork, album metadata or elapsed times.
-Play/Pause, favorite and normalized progress are local interaction probes;
-there is no audio or backend.
+The appearance selector compares **Default** (static, anonymous placeholders)
+with **Apple Music** (an independent applied interface study). Both use the same
+three persistent parts and presentation state. Switch appearance while expanded
+to compare the same context; normalized progress and selected track are retained.
+The selector pauses audio when switching.
 
-The page shows only the experimental component. Buttons and progress use shadcn's
-Base UI components; its Skeleton is deliberately static, with no pulse or shimmer.
-The visual direction is a neutral, rounded iOS-style surface with a vertical player.
-[Apple's player controls](https://support.apple.com/en-ca/guide/iphone/iph676daac9b/ios)
-are a reference for the future music component, not an implemented music integration.
-The Play/Pause icon swap uses [transitions.dev](https://transitions.dev), and Motion
-owns the three-state layout transition.
+Use the compact surface to open preview, then **Open player**. The downward
+chevron and Escape return one state at a time. Default remains silent. The Apple
+Music study uses real public catalog metadata, artwork and streamed short previews;
+Play/Pause, seek, volume, previous/next and the queue control that preview audio.
+Favorites stay local and track-specific. The queue includes Listen on Apple Music
+to open the source song. The sample selects Underworld, Aphex Twin and Burial.
+There is no account connection or full-song playback. Catalog examples are
+recorded in `app/apple-music-tracks.ts`; external media can become unavailable.
+
+The page contains the selector and experiment. Buttons, sliders and the queue
+popover use shadcn's Base UI primitives. Skeleton has no pulse or shimmer. The
+applied player takes cues from [Apple's current player controls](https://support.apple.com/en-euro/guide/iphone/iph676daac9b/27/ios/27).
+Contextual controls use a brief blur/fade, following [Jakub's shared-layout example](https://jakub.kr/work/shared-layout-animations),
+while stable shared parts stay outside presence. Play/Pause retains the
+[transitions.dev](https://transitions.dev) icon swap. Motion owns layout and scale
+correction.
+
+The applied player has thumb-free progress/volume bars with 44px drag targets and
+keyboard focus on the track, an artwork-derived backdrop and a top dismissal
+handle. Default retains its neutral slider styling.
+
+Default is a developer-facing experiment baseline, not a released component API.
+The comparison evaluates customization without inventing a Continuity runtime.
 
 Preview and player become bottom-aligned sheets at narrow sizes. They remain
 nonmodal regions, so Tab follows the document. Resize either

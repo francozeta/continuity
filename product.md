@@ -47,10 +47,12 @@ Shared identity candidates:
 - title
 - artist
 
-The current presentation is an anonymous interaction study: these three parts
-are static placeholders, not mock music data or a loading state. A neutral iOS
-visual direction prepares for a future Apple Music-style track component on the
-web. Content and music integration remain outside this version.
+The current comparison has two appearances over the same persistent track owner:
+an anonymous Default study with static placeholders and an Apple Music-style
+application with real public catalog data and short preview audio. Default
+represents a possible developer baseline; the applied view investigates how it
+holds up with real content, controls and immersive artwork. Neither establishes
+a stable library API or an Apple Music account integration.
 
 ## Validation
 

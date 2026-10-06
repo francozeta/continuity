@@ -14,10 +14,12 @@ The demo should feel like one object changing context, not three screens crossfa
 
 ## Entity
 
-Use one anonymous track study with static cover/title/artist placeholders.
-This presentation has no mock track data or loading animation. No API, database,
-auth, playlist system, or real playback behavior is needed. The earlier fixture
-iteration remains recorded below as historical evidence.
+Compare an anonymous Default study with an applied Apple Music study in the same
+track owner. Default has static cover/title/artist placeholders without a loading
+animation. Apple uses public catalog metadata, artwork and short preview audio;
+it does not connect an account or provide full-song playback. Both retain the
+same three presentation states and shared nodes. Earlier iterations remain below
+as historical evidence.
 
 ## Shared parts
 
@@ -340,3 +342,45 @@ not claims of full screen-reader conformance or cross-browser coverage.
   `output/playwright/`. Frame probes keep the test tab foregrounded to avoid
   background-browser throttling. These observations do not establish stable
   Apple Music parity or cross-browser conformance.
+
+## Default / Apple Music comparison — 2026-10-06
+
+- A small appearance selector compares the anonymous developer baseline with an
+  independent Apple Music application of the same interaction. Switching retains
+  presentation, normalized progress, selected track and the three persistent
+  nodes, and pauses audio. No reusable public API was introduced.
+- Public catalog samples select Underworld's Two Months Off, Aphex Twin's Xtal
+  and Burial's Archangel. One persistent HTML audio element owns actual streamed
+  previews; previous/next, seek, volume and the Base UI queue control real media.
+  Favorites remain local and track-specific. Media rejection cannot overwrite a
+  newer playback request, and unavailable audio gets explicit feedback.
+- Apple's current player screenshot informed the artwork-derived blurred
+  backdrop, immersive cover, top dismissal handle and progress/volume bars without
+  visible knobs. Base UI retains the native slider inputs, 44px drag targets and
+  track-level keyboard focus. The preview disclosure remains visible; the external
+  Apple Music link moves into the queue to reduce clutter.
+- The reported stretched mini controls came from ancestor layout projection.
+  Unnamed position projection corrects their scale; 140ms blur/fade presence
+  softens entrance/exit, with exiting controls inert. Shared cover/title/artist
+  stay outside presence. The Default opener loses its decorative arrow and uses
+  only the surface focus ring. See the Jakub references in `research.md`.
+- Adding the selector exposed narrow placeholder paths clipping the surface.
+  Native arc strengths are now 1.35 toward desktop player, 0.95 toward narrow
+  player, 0.95 toward desktop preview and 1 toward narrow preview. The previous
+  presentation state is no longer needed. Motion still owns interruption and
+  interpolation; these values are local choreography.
+
+The extraction decision is unchanged: customization, media ownership and
+contextual presence have not exposed a missing Continuity runtime primitive.
+
+Verified the production comparison in Chromium: clean lint/build, 43 Default
+interaction assertions, 30 applied interaction assertions, 15 motion/axe
+assertions, ten Default shape-path assertions and two pointer reversals at 90ms.
+Ten desktop/narrow axe audits reported no violations. Six additional media/slider
+checks passed: cross-appearance seeking updates real media time, knob-free bars
+retain keyboard focus, progress clicks and volume drags work, the open queue has
+no axe violations, and deliberately blocked audio exposes feedback and its source
+link. The latter produces an expected failed network request. Final screenshots,
+sampled opening frames and a 60fps recording with a 10%-speed copy are local in
+`output/playwright/`. This remains a Chromium experiment, not a stable API or
+verified cross-browser Apple Music replica.
