@@ -262,6 +262,8 @@ Verified by interacting with the production build in Chromium through Playwright
 CLI, not only by compiling. Temporary scripts, JSON results, screenshots and video
 are kept locally in ignored `output/playwright/`; axe-core was unpacked there for
 the audit and is not a project dependency.
+The table below records the initial presentation; the component-only iteration
+is documented afterward.
 
 | Check                        | Observed result                                                                                                                                                |
 | ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -281,7 +283,33 @@ the audit and is not a project dependency.
 | Visual review                | Settled desktop/narrow captures and sampled transition frames. A 60fps recording and a 10%-speed copy are available locally                                    |
 | Runtime errors               | None observed during the final production interaction checks                                                                                                   |
 
-The executable probes made 36 interaction assertions, 11 motion/accessibility
+The initial executable probes made 36 interaction assertions, 11 motion/accessibility
 assertions, two pointer reversal assertions and five label-path assertions.
 Initial reduced-motion boot was checked separately. These are local observations,
 not claims of full screen-reader conformance or cross-browser coverage.
+
+## Component-only presentation — 2026-10-06
+
+- Removed the page header, explanatory copy, canvas labels and footer. Only the
+  track is visible; the page heading and state announcements remain available to
+  assistive technology. Narrow preview now reaches the viewport bottom.
+- Added the official shadcn Base UI Button and Slider. Their behavior collaborates
+  with Motion; the track still owns playback, saved and seek values. Motion wraps
+  Button for the moving Back and Open player controls and retains DOM refs/focus.
+- Play/Pause uses the [transitions.dev icon swap](https://transitions.dev/skill.html)
+  with both icons mounted, a 250ms blur/scale crossfade and its reduced-motion guard.
+  UI styling, motion and accessibility skills informed this iteration.
+- The shadcn CLI is a development dependency. The component sources remain local;
+  no Continuity component API or additional application features were introduced.
+- Base UI migration exposed the generated Button's fixed height on the absolute
+  compact trigger. Overriding that height restores the whole-row click target.
+- Moving the experiment to the viewport center exposed a one-frame title/cover
+  intersection during a 140ms reversal. Increasing the native arc strength to
+  1.35 restored clearance; sampled labels stay inside the surface in both directions.
+- Rechecked the production build: lint/build pass; 41 interaction, 11 motion/axe,
+  two pointer-reversal and five label-path assertions pass. axe found zero
+  violations in the three desktop states and narrow preview/player. Checked the
+  whole-row target, viewport-bottom sheet, Base UI seek keyboard/value/focus,
+  Play/Pause icon visibility and its reduced-motion guard. Desktop/narrow captures
+  and the local probe results are in `output/playwright/`. The Phase 4 extraction
+  decision remains unchanged.

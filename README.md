@@ -67,7 +67,11 @@ return one state at a time while focus is inside the track. Playback, saving and
 seek are silent state-preservation probes; there is no audio or backend. Artwork
 is an original local SVG study, not the official album cover. Timing is a demo fixture.
 
-Preview becomes an in-canvas sheet at narrow sizes. It is a nonmodal region, so
-background content stays usable and Tab follows the document. Resize either
+The page shows only the experimental track. Buttons and seek use shadcn's Base UI
+components; the Play/Pause icon swap uses [transitions.dev](https://transitions.dev).
+Motion still owns the three-state layout transition.
+
+Preview becomes a bottom sheet at narrow sizes. It is a nonmodal region, so
+Tab follows the document. Resize either
 expanded state without resetting the track. Reduced motion replaces spatial travel
 with an immediate layout change and a short contextual fade.
