@@ -1,10 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { LayoutGroup, MotionConfig, motion } from "motion/react";
+import { LayoutGroup, MotionConfig, arc, motion } from "motion/react";
 import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 type TrackState = "compact" | "preview" | "player";
+
+// Route the labels around the cover. Explicit directions keep the return bend
+// on the same side without sharing an automatic path's direction memory.
+const labelsToPlayer = arc({ strength: 1.2, direction: "ccw" });
+const labelsToPreview = arc({ strength: 1.2, direction: "cw" });
 
 const reducedMotionQuery = "(prefers-reduced-motion: reduce)";
 
@@ -59,6 +64,7 @@ export function TrackExperiment() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [position, setPosition] = useState(84);
+  const labelPath = state === "player" ? labelsToPlayer : labelsToPreview;
   const prefersReducedMotion = useSyncExternalStore(
     subscribeReducedMotion,
     getReducedMotionSnapshot,
@@ -131,20 +137,32 @@ export function TrackExperiment() {
                   draggable={false}
                 />
               </motion.div>
-              <motion.h2
-                className="track-title"
-                layoutId="track:teardrop:title"
+              <motion.div
+                className="track-identity"
                 layout
+                layoutAnchor={false}
+                transition={{
+                  layout: {
+                    ...transition,
+                    path: prefersReducedMotion ? undefined : labelPath,
+                  },
+                }}
               >
-                Teardrop
-              </motion.h2>
-              <motion.p
-                className="track-artist"
-                layoutId="track:teardrop:artist"
-                layout
-              >
-                Massive Attack
-              </motion.p>
+                <motion.h2
+                  className="track-title"
+                  layoutId="track:teardrop:title"
+                  layout
+                >
+                  Teardrop
+                </motion.h2>
+                <motion.p
+                  className="track-artist"
+                  layoutId="track:teardrop:artist"
+                  layout
+                >
+                  Massive Attack
+                </motion.p>
+              </motion.div>
               <button
                 ref={openRef}
                 className="track-open"
@@ -163,6 +181,7 @@ export function TrackExperiment() {
                 <>
                   <motion.button
                     layout="position"
+                    layoutAnchor={{ x: 1, y: 0 }}
                     ref={backRef}
                     className="back-button icon-button"
                     type="button"
@@ -204,11 +223,16 @@ export function TrackExperiment() {
                     </motion.p>
                   )}
                   <motion.div
+                    key={state}
                     layout="position"
                     className="track-details"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    transition={{ duration: 0.16, layout: transition }}
+                    transition={{
+                      delay: 0.12,
+                      duration: 0.16,
+                      layout: transition,
+                    }}
                   >
                     <p className="track-album">
                       Mezzanine <span aria-hidden="true">·</span> 1998

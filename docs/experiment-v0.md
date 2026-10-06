@@ -163,6 +163,10 @@ After the interaction works, extract the smallest candidate abstraction and comp
   that state/focus assertions and settled screenshots missed. Keep `layout`/IDs
   stable and change the layout transition directly. This is a version-specific
   integration finding, not evidence for a new animation engine.
+  Motion deliberately retains one frame at progress zero even for instant layout
+  changes. The reduced-motion probe therefore checks only old/destination geometry
+  in the first frames and no projection afterward, rather than mistaking that
+  initial measurement frame for animated travel.
 - Reserved the scrollbar gutter to keep vertical scrolling from shifting geometry.
   Enlarged the native seek target to 44px. At 320px, shortened state-path spacing
   to keep each label together. Fixed the missing space when the instruction's line
@@ -173,6 +177,24 @@ After the interaction works, extract the smallest candidate abstraction and comp
   content mounts when relevant so it does not animate from a previously hidden
   zero-sized box. The cover/title/artist still persist; entity-owned playing,
   saved and seek values survive contextual-control remounts. No exit queue is needed.
+- Correcting scale exposed contextual controls outside the growing shell in early
+  frames. Clipped the shell to reveal them within its silhouette, and put the
+  compact trigger's focus outline on the shell so clipping cannot hide that ring.
+  A pointer reversal at 90ms then exposed Back drifting outside that clip during
+  preview → player. Motion's native `layoutAnchor={{ x: 1, y: 0 }}` keeps its 44px
+  target 8px from the animated shell's top/right edges. Both transitions now
+  reverse through actual pointer clicks at 90ms, before the spring settles.
+- Intermediate frames also exposed the labels crossing the cover on preview →
+  player. Independent curved paths made title and artist collide during reversal.
+  A persistent, unnamed text group now moves along Motion's native `arc` path;
+  title and artist retain their own identities and scale correction inside it.
+  The two explicit bend directions keep the return on the same side. In Motion
+  14, relative-target interpolation bypassed the curve, so the group's native
+  `layoutAnchor={false}` lets the path control its travel. Metadata remounts with
+  a 120ms delayed fade to avoid competing with the moving labels. Five sampled
+  checks cover both directions at desktop/320px and interruption at 140ms: no
+  cover/label or label/label overlap was observed. This is product choreography
+  using Motion, not evidence for a Continuity path engine.
 
 While building, record:
 
@@ -247,6 +269,8 @@ the audit and is not a project dependency.
 | Keyboard-only full cycle     | Skip link → track → Close → Play → Save → Open player → Back → seek. Enter/Space/arrow keys work; Escape returns one state with the expected focus destination |
 | Internal values              | Playing, saved and seek survive the complete roundtrip and 12 rapidly interrupted cycles                                                                       |
 | Reversal at 140ms            | Both transitions have intermediate sampled geometry, reverse before reaching the target, and settle to the original 52px/160px cover widths                    |
+| Pointer reversal at 90ms     | Back stays inside the growing shell at its current visual position; actual pointer clicks reverse compact → preview and preview → player before completion     |
+| Label path                   | Sampled preview ↔ player at desktop/320px and desktop reversal at 140ms: title/artist remain together without overlap with each other or the cover             |
 | Rapid toggling               | 12 interrupted full cycles, with 50ms gaps, settle to preview; identity DOM nodes remain the same                                                              |
 | Preview resize               | 390×844, 320×568, 844×390, 768×1024 and 1440×1000 preserve entity/state, cover/title nodes and focused Play; no horizontal overflow                            |
 | Player resize                | Seek remains focused and retains its value when resized to 320px                                                                                               |
@@ -257,6 +281,7 @@ the audit and is not a project dependency.
 | Visual review                | Settled desktop/narrow captures and sampled transition frames. A 60fps recording and a 10%-speed copy are available locally                                    |
 | Runtime errors               | None observed during the final production interaction checks                                                                                                   |
 
-The executable probes made 36 interaction assertions and 11 motion/accessibility
-assertions. Initial reduced-motion boot was checked separately. These are local
-observations, not claims of full screen-reader conformance or cross-browser coverage.
+The executable probes made 36 interaction assertions, 11 motion/accessibility
+assertions, two pointer reversal assertions and five label-path assertions.
+Initial reduced-motion boot was checked separately. These are local observations,
+not claims of full screen-reader conformance or cross-browser coverage.

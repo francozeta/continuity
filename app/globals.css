@@ -150,6 +150,7 @@ h1 {
 }
 .track-surface {
   position: relative;
+  overflow: hidden;
   display: grid;
   flex: 0 1 auto;
   color: var(--foreground);
@@ -159,11 +160,16 @@ h1 {
     0 12px 40px #00000025,
     0 0 0 1px #ffffff08;
 }
+
+.track-surface:has(.track-open:focus-visible) {
+  outline: 2px solid;
+  outline-offset: 5px;
+}
 .track-surface[data-state="compact"] {
   width: 360px;
   padding: 14px;
   grid-template-columns: 52px minmax(0, 1fr) 30px;
-  grid-template-areas: "cover title ." "cover artist .";
+  grid-template-areas: "cover identity .";
   column-gap: 15px;
   row-gap: 4px;
 }
@@ -183,8 +189,6 @@ h1 {
   object-fit: cover;
 }
 .track-title {
-  grid-area: title;
-  align-self: end;
   width: fit-content;
   max-width: 100%;
   margin: 0;
@@ -194,14 +198,20 @@ h1 {
   line-height: 1.25;
 }
 .track-artist {
-  grid-area: artist;
-  align-self: start;
   width: fit-content;
   max-width: 100%;
-  margin: 0;
+  margin: 4px 0 0;
   font-size: 12px;
   line-height: 1.5;
   color: #b0b5a8;
+}
+.track-identity {
+  grid-area: identity;
+  align-self: center;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
 }
 .track-open {
   position: absolute;
@@ -228,7 +238,7 @@ h1 {
   width: 360px;
   padding: 24px;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-areas: "cover" "title" "artist" "details" "controls" "expand";
+  grid-template-areas: "cover" "identity" "details" "controls" "expand";
   text-align: center;
   justify-items: center;
 }
@@ -236,11 +246,14 @@ h1 {
   width: 160px;
   margin: 0 0 16px;
 }
-[data-state="preview"] > .track-title {
+[data-state="preview"] > .track-identity {
+  align-items: center;
+}
+[data-state="preview"] .track-title {
   font-size: 25px;
   letter-spacing: -0.8px;
 }
-[data-state="preview"] > .track-artist {
+[data-state="preview"] .track-artist {
   font-size: 14px;
   margin-top: 6px;
 }
@@ -340,17 +353,16 @@ h1 {
   width: 840px;
   padding: 48px;
   grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
-  grid-template-areas: "cover context" "cover title" "cover artist" "cover details" "cover timeline" "cover controls";
+  grid-template-areas: "cover context" "cover identity" "cover details" "cover timeline" "cover controls";
   column-gap: 48px;
   align-items: start;
 }
-[data-state="player"] > .track-title {
+[data-state="player"] .track-title {
   font-size: clamp(30px, 4vw, 46px);
   letter-spacing: -1.6px;
-  align-self: end;
   margin-top: 18px;
 }
-[data-state="player"] > .track-artist {
+[data-state="player"] .track-artist {
   font-size: 17px;
   margin-top: 9px;
 }
@@ -524,7 +536,7 @@ h1 {
     width: 100%;
     padding: 28px 24px;
     grid-template-columns: minmax(0, 1fr);
-    grid-template-areas: "context" "cover" "title" "artist" "details" "timeline" "controls";
+    grid-template-areas: "context" "cover" "identity" "details" "timeline" "controls";
     justify-items: center;
     text-align: center;
   }
@@ -532,11 +544,14 @@ h1 {
     width: min(100%, 260px);
     margin-top: 22px;
   }
-  [data-state="player"] > .track-title {
+  [data-state="player"] > .track-identity {
+    align-items: center;
+  }
+  [data-state="player"] .track-title {
     font-size: 32px;
     margin-top: 24px;
   }
-  [data-state="player"] > .track-artist {
+  [data-state="player"] .track-artist {
     font-size: 15px;
     margin-top: 6px;
   }
