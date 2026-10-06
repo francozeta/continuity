@@ -78,3 +78,31 @@ Stop or reposition the project if the v0 experiment shows that:
 - What happens under repeated interruption?
 - Which concerns belong to Continuity versus Base UI / Motion?
 - Can the primitive remain tiny?
+
+## Checked against the v0 implementation
+
+| Existing tool                    | Primary source                                                                                                                             | Implication for Continuity                                                                                                                                                                                                                                              |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Motion layout                    | [Layout animations](https://motion.dev/docs/react-layout-animations)                                                                       | Matching IDs are not limited to two states. Motion owns projection, scale correction and springs. Horizontal resizing deliberately suppresses layout animation.                                                                                                         |
+| Motion paths                     | [arc](https://motion.dev/docs/arc)                                                                                                         | Curved paths and interruption behavior are animation-engine concerns already exposed by Motion. No Continuity path API was built.                                                                                                                                       |
+| React ViewTransition             | [React reference](https://react.dev/reference/react/ViewTransition)                                                                        | Snapshot boundaries are another renderer choice, not evidence for an entity layer. The installed `react@19.2.8` package exported no `ViewTransition` in Node inspection; Next's compiled React is a separate concern. No experimental flag or React upgrade was needed. |
+| Motion AnimateView / animateView | [React](https://motion.dev/docs/react-animate-view), [view animations](https://motion.dev/docs/animate-view)                               | Snapshot transition interruption is different from retargeting live layout springs. Documented queue/immediate policies do not prove physical reversal equivalence. Neither was added or benchmarked here.                                                              |
+| Motion Primitives                | [Morphing Dialog](https://motion-primitives.com/docs/morphing-dialog)                                                                      | A composed dialog solves useful interaction details. One morphing dialog is not a multi-state entity model.                                                                                                                                                             |
+| React Morpheus                   | [Maintainer repository](https://github.com/shivekkhurana/react-morpheus)                                                                   | Its controlled collapsed/expanded surface API is a close two-surface pattern; application state remains caller-owned.                                                                                                                                                   |
+| Vista Sheet                      | [Maintainer repository](https://github.com/seansmithworks/vista-sheet)                                                                     | Owns a draggable trigger and modal sheet morph, with an explicit shared-part API. That surface lifecycle was intentionally not rebuilt here.                                                                                                                            |
+| SwiftUI                          | [matchedGeometryEffect](<https://developer.apple.com/documentation/swiftui/view/matchedgeometryeffect(id:in:properties:anchor:issource:)>) | Namespace and identity are explicit API arguments. Identity is not a novel Continuity concept.                                                                                                                                                                          |
+| Compose                          | [Shared elements](https://developer.android.com/develop/ui/compose/animation/shared-elements)                                              | Remembered keys coordinate content; the docs even model entity/origin/part keys. A graph of product states cannot be claimed as novel simply because it has three states.                                                                                               |
+
+**Inference from this experiment:** React state ownership + persistent DOM + CSS +
+direct Motion already solve this topology. The investigated web libraries do not
+establish a missing generic entity primitive, and the demo does not establish one
+either. Do not position Continuity as an engine or a novel shared-identity mechanism.
+
+### Installed-version findings
+
+Motion 14.0.0 was tested, rather than assuming its current docs covered runtime
+preference changes. Its reduced-motion hook and visual-element reduction flag
+snapshot at mount. Projection layout options are also established at creation.
+Stable `layout`/IDs with a reactive instant transition avoided remounting or
+patching Motion internals. These are integration observations, not proof of a core
+Continuity responsibility. See the evidence log for the failed and repaired cases.

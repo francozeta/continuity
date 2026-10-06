@@ -148,6 +148,32 @@ After the interaction works, extract the smallest candidate abstraction and comp
 - Only contextual extras fade (160ms). Motion owns layout measurement, projection,
   spring retargeting and scale correction. No abstraction was needed to add player.
 
+### Phase 3 — problems found in the browser
+
+- `focus({ preventScroll: true })` kept Back offscreen at 320×568 and 844×390
+  after opening player. Native `focus()` can keep keyboard focus visible without
+  a custom focus scroll engine. This is product behavior, not identity boilerplate.
+- Motion 14.0.0's installed `useReducedMotion` reads a `useState` snapshot at mount;
+  toggling the preference in an existing session left spatial motion enabled.
+  A local `useSyncExternalStore` subscription to `matchMedia` makes the preference
+  reactive. Under reduce, layout transition is instant; contextual opacity remains
+  a restrained 160ms. Dynamically changing `MotionConfig.reducedMotion` retained
+  its mount-time flag. Disabling `layout` during hydration also left projection
+  options disabled after re-enabling it. Frame-by-frame measurement caught jumps
+  that state/focus assertions and settled screenshots missed. Keep `layout`/IDs
+  stable and change the layout transition directly. This is a version-specific
+  integration finding, not evidence for a new animation engine.
+- Reserved the scrollbar gutter to keep vertical scrolling from shifting geometry.
+  Enlarged the native seek target to 44px. At 320px, shortened state-path spacing
+  to keep each label together. Fixed the missing space when the instruction's line
+  break is hidden on narrow screens.
+- axe found a footer link distinguishable only by color. Added an underline.
+- Slow-motion frames exposed stretched controls/metadata inside the scaling shell.
+  Unnamed `layout="position"` children supply Motion's scale correction. Contextual
+  content mounts when relevant so it does not animate from a previously hidden
+  zero-sized box. The cover/title/artist still persist; entity-owned playing,
+  saved and seek values survive contextual-control remounts. No exit queue is needed.
+
 While building, record:
 
 - repeated IDs or naming conventions
@@ -167,3 +193,70 @@ At the end, answer one question:
 If yes, design the API from the evidence.
 
 If no, keep the experiment as research and change direction.
+
+## Phase 4 — evidence review
+
+1. **What repeats?** Three explicit identity strings occur once each. The Back
+   destination appears in both click and Escape handlers; several contextual
+   opacity/layout transitions are alike. These are small local product/animation
+   choices. There is no duplicated graph mapping, entity store, portal manager or
+   shared-element registration code to remove.
+2. **What belongs to Motion?** Measurement, projection, scale correction, springs,
+   interruption and layout paths. Keep their props visible. `layout="position"`
+   on contextual children is scale correction, not a new semantic shared part.
+3. **What is Continuity semantics?** A track is the same entity; compact, preview
+   and player are its presentations; cover/title/artist convey that identity. This
+   is a useful product description, but is already expressible by one React owner,
+   a state union and CSS. Naming it does not establish a missing runtime primitive.
+4. **Would entity/state/part reduce complexity?** Not in this topology. Persistent
+   nodes and parent-owned values removed most coordination before any extraction.
+   Focus destinations are specific to this product, not generic entity behavior.
+5. **Is an abstraction clearer?** Here, the literal IDs and Motion props are more
+   transparent. IDs are even redundant while each part persists in one DOM owner.
+6. **What minimum API could be tested later?** At most, typed identity generation
+   if multiple entities/independent render sites produce real naming repetition.
+   There is no evidence yet for state registration, wrappers, context, presence
+   ownership, engines or adapters.
+
+| Candidate                      | Direct Motion baseline                        | Extra cost                                                                  | Decision       |
+| ------------------------------ | --------------------------------------------- | --------------------------------------------------------------------------- | -------------- |
+| ID-generation helper           | Three readable ID literals                    | Three calls, an entity declaration and helper/types; no behavior disappears | Do not extract |
+| Entity / State / Part wrappers | One local state and three persistent elements | Wrappers/registration while CSS, focus and Motion remain necessary          | Do not extract |
+
+### Phase 5 decision
+
+**Skipped because the evidence does not justify an internal Continuity prototype.**
+No abstracted version was implemented. The table above compares the added cost;
+adding a third state did not produce pairwise wiring.
+The identity interaction can be reviewed now; library usefulness remains unproven.
+
+This does not prove that independent render owners, routes or portals are equally
+simple. None were necessary here, and the experiment does not claim to validate them.
+Human perception, actual screen readers and other browser engines still need review.
+
+## Verification record
+
+Verified by interacting with the production build in Chromium through Playwright
+CLI, not only by compiling. Temporary scripts, JSON results, screenshots and video
+are kept locally in ignored `output/playwright/`; axe-core was unpacked there for
+the audit and is not a project dependency.
+
+| Check                        | Observed result                                                                                                                                                |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm lint`, `pnpm build`    | Clean lint; TypeScript and production build pass                                                                                                               |
+| Keyboard-only full cycle     | Skip link → track → Close → Play → Save → Open player → Back → seek. Enter/Space/arrow keys work; Escape returns one state with the expected focus destination |
+| Internal values              | Playing, saved and seek survive the complete roundtrip and 12 rapidly interrupted cycles                                                                       |
+| Reversal at 140ms            | Both transitions have intermediate sampled geometry, reverse before reaching the target, and settle to the original 52px/160px cover widths                    |
+| Rapid toggling               | 12 interrupted full cycles, with 50ms gaps, settle to preview; identity DOM nodes remain the same                                                              |
+| Preview resize               | 390×844, 320×568, 844×390, 768×1024 and 1440×1000 preserve entity/state, cover/title nodes and focused Play; no horizontal overflow                            |
+| Player resize                | Seek remains focused and retains its value when resized to 320px                                                                                               |
+| Short viewports              | Focused Back remains visible at 320×568 and 844×390 after the native-focus fix                                                                                 |
+| Reduced motion               | Dynamic preference change removes spatial projection; switching back restores real motion. Loading with reduce enabled also has no spatial projection          |
+| 200% CSS zoom / reflow probe | Preview and player remain operable without horizontal overflow; narrow-width reflow is separately covered above                                                |
+| Automated accessibility      | axe-core 4.14.0: zero violations with WCAG 2 A/AA, 2.1 AA, 2.2 AA and best-practice tags in all three desktop states plus preview/player at 320px              |
+| Visual review                | Settled desktop/narrow captures and sampled transition frames. A 60fps recording and a 10%-speed copy are available locally                                    |
+| Runtime errors               | None observed during the final production interaction checks                                                                                                   |
+
+The executable probes made 36 interaction assertions and 11 motion/accessibility
+assertions. Initial reduced-motion boot was checked separately. These are local
+observations, not claims of full screen-reader conformance or cross-browser coverage.

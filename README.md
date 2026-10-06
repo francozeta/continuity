@@ -8,7 +8,9 @@ Instead of treating a card, preview, drawer, and full view as unrelated UI, Cont
 
 ## Status
 
-Experimental. The first goal is not to ship a component library. It is to validate whether continuity across 3+ interface states can become a useful React primitive.
+Experimental. v0 is a working three-state music interaction built directly with
+Motion. A useful React primitive remains unproven: one persistent React tree handles
+this experiment without a Continuity abstraction.
 
 ## First experiment
 
@@ -38,6 +40,10 @@ If the experiment proves useful, the primitive will be extracted from the implem
 
 Planned: `continuity.francozeta.com`
 
+For the current implementation and verification evidence, read
+[`docs/experiment-v0.md`](docs/experiment-v0.md). Research and source links live in
+[`docs/research.md`](docs/research.md).
+
 ## License
 
 TBD
@@ -55,3 +61,13 @@ pnpm dev
 Open http://localhost:3000. `pnpm lint` checks source and `pnpm build` checks
 production compilation. Node.js 20.9+ is required by Next.js; the package manager
 version is recorded in `package.json`.
+
+Use the track row to open preview, then **Open player**. Close/Back and Escape
+return one state at a time while focus is inside the track. Playback, saving and
+seek are silent state-preservation probes; there is no audio or backend. Artwork
+is an original local SVG study, not the official album cover. Timing is a demo fixture.
+
+Preview becomes an in-canvas sheet at narrow sizes. It is a nonmodal region, so
+background content stays usable and Tab follows the document. Resize either
+expanded state without resetting the track. Reduced motion replaces spatial travel
+with an immediate layout change and a short contextual fade.
