@@ -135,6 +135,19 @@ After the interaction works, extract the smallest candidate abstraction and comp
   three explicit identities while investigating the third state; do not invent a
   wrapper to make them look more necessary.
 
+### Phase 2 — third state
+
+- Preview is a centered vertical composition; player places a much larger cover
+  beside title, metadata, seek and playback controls. Player stacks at narrow sizes.
+  There are still only three named identities, not a pairwise transition mapping.
+- The same button acts as Close in preview and Back in player. Escape moves back
+  one state. Player → preview restores focus to Open player; preview → compact
+  restores the track trigger, independently of spring completion.
+- A seek value now joins playing/saved state as a preservation probe. All three are
+  held by the track, so changing presentation or viewport cannot reset them.
+- Only contextual extras fade (160ms). Motion owns layout measurement, projection,
+  spring retargeting and scale correction. No abstraction was needed to add player.
+
 While building, record:
 
 - repeated IDs or naming conventions
