@@ -14,7 +14,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Continuity — A track, uninterrupted",
-  description: "One track, three contexts. An experiment in preserving interface identity with React and Motion.",
+  description:
+    "One track, three contexts. An experiment in preserving interface identity with React and Motion.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
