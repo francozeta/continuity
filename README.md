@@ -62,16 +62,21 @@ Open http://localhost:3000. `pnpm lint` checks source and `pnpm build` checks
 production compilation. Node.js 20.9+ is required by Next.js; the package manager
 version is recorded in `package.json`.
 
-Use the track row to open preview, then **Open player**. Close/Back and Escape
-return one state at a time while focus is inside the track. Playback, saving and
-seek are silent state-preservation probes; there is no audio or backend. Artwork
-is an original local SVG study, not the official album cover. Timing is a demo fixture.
+Use the compact surface to open preview, then **Open player**. The downward
+chevron and Escape return one state at a time. This version uses static cover and
+text placeholders: no mock track, artwork, album metadata or elapsed times.
+Play/Pause, favorite and normalized progress are local interaction probes;
+there is no audio or backend.
 
-The page shows only the experimental track. Buttons and seek use shadcn's Base UI
-components; the Play/Pause icon swap uses [transitions.dev](https://transitions.dev).
-Motion still owns the three-state layout transition.
+The page shows only the experimental component. Buttons and progress use shadcn's
+Base UI components; its Skeleton is deliberately static, with no pulse or shimmer.
+The visual direction is a neutral, rounded iOS-style surface with a vertical player.
+[Apple's player controls](https://support.apple.com/en-ca/guide/iphone/iph676daac9b/ios)
+are a reference for the future music component, not an implemented music integration.
+The Play/Pause icon swap uses [transitions.dev](https://transitions.dev), and Motion
+owns the three-state layout transition.
 
-Preview becomes a bottom sheet at narrow sizes. It is a nonmodal region, so
-Tab follows the document. Resize either
+Preview and player become bottom-aligned sheets at narrow sizes. They remain
+nonmodal regions, so Tab follows the document. Resize either
 expanded state without resetting the track. Reduced motion replaces spatial travel
 with an immediate layout change and a short contextual fade.

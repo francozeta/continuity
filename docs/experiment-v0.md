@@ -14,15 +14,10 @@ The demo should feel like one object changing context, not three screens crossfa
 
 ## Entity
 
-Use a single static track fixture. No API, database, auth, playlist system, or real player behavior is needed.
-
-Suggested content:
-
-- title
-- artist
-- cover
-- secondary metadata
-- a few inert playback actions
+Use one anonymous track study with static cover/title/artist placeholders.
+This presentation has no mock track data or loading animation. No API, database,
+auth, playlist system, or real playback behavior is needed. The earlier fixture
+iteration remains recorded below as historical evidence.
 
 ## Shared parts
 
@@ -313,3 +308,35 @@ not claims of full screen-reader conformance or cross-browser coverage.
   Play/Pause icon visibility and its reduced-motion guard. Desktop/narrow captures
   and the local probe results are in `output/playwright/`. The Phase 4 extraction
   decision remains unchanged.
+
+## Static iOS-style study — 2026-10-06
+
+- Removed the track fixture and artwork asset. Cover, title and artist are static
+  shadcn Skeleton shapes, hidden from assistive technology; this is a layout
+  prototype, not a loading state. No pulse, shimmer, elapsed time or simulated
+  audio is displayed. Controls retain meaningful names and a hidden description
+  explains their demonstration purpose.
+- A neutral rounded surface now contains a horizontal preview header (72px
+  cover) and a portrait player (up to 312px cover). Both expanded states become
+  bottom sheets on narrow screens. The downward chevron stays centered 8px from
+  the surface top with a 44px target during interruption. Play/Pause, favorite
+  and normalized progress remain local React state.
+- Apple Music-style interaction is the direction for a future component. This
+  iteration uses the [iPhone player controls](https://support.apple.com/en-ca/guide/iphone/iph676daac9b/ios)
+  as a reference, without a music service integration or a stable component API.
+- The horizontal-to-portrait composition exposed cover/label intersections.
+  Native Motion arcs now use strength 1.35 toward player, 0.9 toward preview,
+  and 1.8 for the narrow player-to-preview return. Local previous presentation
+  selects that narrow return without affecting compact-to-preview. This is
+  product choreography; projection, interruption and path interpolation remain
+  Motion's responsibility. The three persistent names are `track:cover`,
+  `track:title` and `track:artist`; no Continuity extraction is justified.
+- Verified the final production build: lint/build pass; 43 interaction, 11
+  motion/accessibility, two pointer-reversal and ten shape-path assertions pass.
+  axe reports zero violations in the three desktop states and narrow expanded
+  states. Static idle geometry, keyboard/focus, rapid reversals, resize and the
+  reactive reduced-motion preference were checked. Desktop/narrow captures,
+  sampled frames, a 60fps recording and a 10%-speed copy are kept locally in
+  `output/playwright/`. Frame probes keep the test tab foregrounded to avoid
+  background-browser throttling. These observations do not establish stable
+  Apple Music parity or cross-browser conformance.

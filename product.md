@@ -47,6 +47,11 @@ Shared identity candidates:
 - title
 - artist
 
+The current presentation is an anonymous interaction study: these three parts
+are static placeholders, not mock music data or a loading state. A neutral iOS
+visual direction prepares for a future Apple Music-style track component on the
+web. Content and music integration remain outside this version.
+
 ## Validation
 
 The experiment is successful if:

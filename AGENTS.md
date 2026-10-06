@@ -36,12 +36,15 @@ Read `docs/research.md` before proposing a competing abstraction.
 
 - Work on `feat/continuity-v0`; preserve the existing App Router setup and pnpm lockfile.
 - `app/track-experiment.tsx` owns the entity's local state. Presentation uses CSS
-  grid in `app/globals.css`. Only cover, title and artist have `layoutId`.
+  grid in `app/globals.css`. Only the static cover, title and artist placeholders
+  have `layoutId`; this version has no track fixture or loading animation.
 - Keep projection identities stable. The reactive reduced-motion preference changes
   the transition to instant; see the Motion 14 findings in `docs/experiment-v0.md`.
 - Context controls can remount; keep their persistent values in the track owner.
 - Buttons and seek use the shadcn Base UI components in `components/ui/`. Keep
   their accessible behavior and keep the page focused on the experiment alone.
+- Skeleton is a static shadcn component. Keep placeholders decorative and retain
+  meaningful accessible names for controls; do not announce a loading state.
 - Run `pnpm lint` and `pnpm build`. Also inspect live interruption, keyboard/focus,
   narrow layouts, resizing and reduced motion; compilation is not visual validation.
 - Local browser captures/scripts go in ignored `output/playwright/`. Keep evidence
