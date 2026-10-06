@@ -384,3 +384,38 @@ link. The latter produces an expected failed network request. Final screenshots,
 sampled opening frames and a 60fps recording with a 10%-speed copy are local in
 `output/playwright/`. This remains a Chromium experiment, not a stable API or
 verified cross-browser Apple Music replica.
+
+## Desktop reference audit — 2026-10-06
+
+No application code changed in this review. See the primary Apple references and
+the proposed design direction in `research.md`.
+
+| Viewport | Apple player | Cover | Observation |
+| --- | --- | --- | --- |
+| 1440 × 900 | 400 × 713px | 400 × 360px | Portrait composition occupies only 28% of viewport width. |
+| 1280 × 720 | 400 × 553px | 400 × 200px | The cover shrinks disproportionately as viewport height falls. |
+| 685 × 572 | 400 × 533px | 400 × 180px | Footer bottom is 625px; vertical scrolling is required. |
+| 390 × 844 | 375 × 677px | 375 × 324px | Portrait bottom-sheet presentation fits this viewport. |
+
+Reviewed both appearances, the three applied states, compact hover/focus, queue,
+all three catalog covers and the existing 10%-speed motion capture. The square
+Aphex artwork loses its outer composition under the immersive crop/fade. The
+system font stack resolves differently on Windows than Apple's reference devices;
+optical text/icon metrics still need an applied-design pass.
+
+Six fresh preview/player/reversal samples at 1280 × 900 and 390 × 844 collected
+274 animation frames. Five samples briefly intersected text bounds with cover
+bounds; four briefly intersected title/artist line boxes. These geometric probes
+are indicators, not pixel-ink collision tests. Settled frames had no intersections.
+The applied trajectories and contextual timing need visual refinement independently
+of the already passing Default placeholder paths. A fresh opening capture also
+shows transport controls appearing while the timeline is still moving.
+
+The Apple dismissal handle currently executes a click; it does not track a drag.
+Either implement follow-pointer dismissal/cancellation or use a dismissal affordance
+that accurately describes the available action. Native Apple timing/gesture behavior,
+Safari and cross-browser material rendering were not verified in this review.
+
+Design verdict: needs changes, chiefly desktop composition, artwork handling and
+applied transition choreography. The existing direct-Motion extraction decision
+is unchanged. Local review probes and captures remain in `output/playwright/`.

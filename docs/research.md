@@ -122,3 +122,39 @@ Continuity responsibility. See the evidence log for the failed and repaired case
   in our compact controls. Neither concern requires a Continuity runtime.
 - Public US catalog samples are recorded in `app/apple-music-tracks.ts`. Media
   remains external and can fail; the player exposes an error and source-song link.
+
+### Desktop and Apple fidelity review — 2026-10-06
+
+This is a reference review, not a UI implementation or a native-app gesture test.
+
+- Compare the [iPhone player](https://support.apple.com/es-us/guide/iphone/iph676daac9b/27/ios/27)
+  and [iPad player](https://support.apple.com/es-us/guide/ipad/ipad9a4ba1e8/27/ipados/27)
+  with the [Mac MiniPlayer](https://support.apple.com/en-ie/guide/music/mus71d7dcfce/mac)
+  and [Mac Full Screen Player](https://support.apple.com/en-lamr/guide/music/-musf438ffc97/mac).
+  These are different product compositions. The iPhone guide opens Now Playing
+  directly from MiniPlayer; our mandatory preview and Open player action belong
+  to the three-state experiment. Keep that distinction explicit when assessing
+  fidelity, rather than presenting this navigation as an exact Apple replica.
+- Apple's [motion specifications](https://help.apple.com/itc/albummotionguide/#/bc5165604402)
+  deliver separate 3:4 and 1:1 album-page assets. Its [safe-area guidance](https://help.apple.com/itc/albummotionguide/#/bca8ccc58922)
+  accounts for UI overlays, gradients and important artwork. Those specifications
+  do not prove that every Now Playing composition uses those exact dimensions.
+  Our static square catalog covers are not interchangeable with dedicated
+  immersive artwork. Preserve the whole square cover as a fallback; reserve
+  edge-to-edge treatment for suitable artwork instead of cropping every album.
+- [Apple's Liquid Glass session](https://developer.apple.com/videos/play/wwdc2025/219/)
+  separates content from the floating control/navigation layer and adapts
+  material contrast to its surroundings. A heavy black fade and a generally
+  blurred panel do not reproduce that hierarchy. Refine contrast, tint and
+  control placement together; increasing blur alone is insufficient.
+- Proposed next design pass: adapt the same entity to a wider desktop composition
+  and a portrait mobile composition, with container-height-aware spacing. A wide
+  artwork/controls arrangement would be our web adaptation, not a literal copy
+  of Apple's square expanded MiniPlayer. Then refine artwork fallback, text/icon
+  metrics, contextual-control timing and the dismissal-handle affordance. Keep
+  unsupported controls out of the study.
+
+The next Continuity validation remains preserving track, playback, seek and focus
+through a meaningful presentation change. Visual refinement still does not justify
+a public API; a later independent-owner or portal case must expose actual repeated
+coordination before extraction.
