@@ -46,8 +46,8 @@ type TrackState = "compact" | "preview" | "player";
 const MotionButton = motion.create(Button);
 const MotionSkeleton = motion.create(Skeleton);
 // Keep the text beside the cover until it reaches the player's lower composition.
-const toPlayer = arc({ strength: 1.35, direction: "cw" });
-const toNarrowPlayer = arc({ strength: 0.95, direction: "cw" });
+const toPlayer = arc({ strength: 1.3, direction: "cw" });
+const toNarrowPlayer = arc({ strength: 0.9, direction: "cw" });
 const toPreview = arc({ strength: 0.95, direction: "ccw" });
 const toNarrowPreview = arc({ strength: 1, direction: "ccw" });
 
