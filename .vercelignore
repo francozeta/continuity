@@ -3,8 +3,8 @@ node_modules/
 out/
 build/
 coverage/
-output
-.playwright-cli
+/output
+/.playwright-cli
 .git/
 .vercel/
 .env*

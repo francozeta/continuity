@@ -365,7 +365,7 @@ not claims of full screen-reader conformance or cross-browser coverage.
   stay outside presence. The Default opener loses its decorative arrow and uses
   only the surface focus ring. See the Jakub references in `research.md`.
 - Adding the selector exposed narrow placeholder paths clipping the surface.
-  Native arc strengths are now 1.35 toward desktop player, 0.95 toward narrow
+  Native arc strengths are now 1.3 toward desktop player, 0.9 toward narrow
   player, 0.95 toward desktop preview and 1 toward narrow preview. The previous
   presentation state is no longer needed. Motion still owns interruption and
   interpolation; these values are local choreography.
@@ -507,3 +507,28 @@ switching to Default retains player state and pauses audio, and those interactio
 produce no runtime errors. Desktop and mobile captures were inspected and remain
 in ignored `output/playwright/`. This deployment check supplements the local
 evidence above; it does not establish additional browser or native-gesture parity.
+
+## PR readiness review — 2026-10-06
+
+### Findings
+
+| Severity | Location | Before | After | Why |
+| --- | --- | --- | --- | --- |
+| MEDIUM | `app/track-experiment.tsx`, queue selection | Every focused queue row moved focus to the heading. | Check whether the focused DOM row actually disconnected after selection. | Preserve keyboard position when a row survives natural advancement or history selection. |
+| MEDIUM | `app/track-experiment.tsx`, appearance buttons | Apple preview errors remained visible in Default. | Clear the error on appearance changes. | Announce errors only in their relevant context. |
+| LOW | `app/globals.css`, `.music-queue` | A fixed mask faded the last row even at the scroll end. | Remove the queue mask. | Keep the final row and its focus indicator visible. |
+
+The review also synchronizes documented arc strengths and anchors Vercel's local
+capture exclusions. A dry run includes 33 files and no local QA/build/environment
+entries. Trailing-slash patterns retained empty directory entries, so the root
+directories use `/output` and `/.playwright-cli`.
+
+### Verification and verdict
+
+Lint and production build pass. Nine targeted Chromium checks pass for surviving
+and removed row focus, disabled Next focus, unmasked final rows, Escape, error
+clearing across appearances and a zero-violation axe audit. Playback lifecycle
+events were dispatched for deterministic focus cases; these supplement the real
+media checks above. Screen-reader speech and additional browsers were not tested.
+Verdict: Approve for the existing experimental scope; the follow-up limitations
+above remain.

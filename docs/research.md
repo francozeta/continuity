@@ -100,6 +100,11 @@ either. Do not position Continuity as an engine or a novel shared-identity mecha
 
 ### Installed-version findings
 
+Rechecked on 2026-10-06 with `require('react')`: the installed package reports
+version `19.2.8` and `'ViewTransition' in react` is `false`. This is a reproducible
+observation of this checkout, not a claim about every React build or the newer
+version documented on react.dev.
+
 Motion 14.0.0 was tested, rather than assuming its current docs covered runtime
 preference changes. Its reduced-motion hook and visual-element reduction flag
 snapshot at mount. Projection layout options are also established at creation.
@@ -131,6 +136,8 @@ This is a reference review, not a UI implementation or a native-app gesture test
   and [iPad player](https://support.apple.com/es-us/guide/ipad/ipad9a4ba1e8/27/ipados/27)
   with the [Mac MiniPlayer](https://support.apple.com/en-ie/guide/music/mus71d7dcfce/mac)
   and [Mac Full Screen Player](https://support.apple.com/en-lamr/guide/music/-musf438ffc97/mac).
+  The latter URL was rechecked: it loads Apple's lyrics guide, including its
+  Full Screen Player instructions and screenshot. Its leading dash is valid.
   These are different product compositions. The iPhone guide opens Now Playing
   directly from MiniPlayer; our mandatory preview and Open player action belong
   to the three-state experiment. Keep that distinction explicit when assessing

@@ -265,6 +265,7 @@ export function TrackExperiment() {
   const queueTriggerRef = useRef<HTMLButtonElement>(null);
   const queueHeadingRef = useRef<HTMLHeadingElement>(null);
   const pendingQueueFocus = useRef<"heading" | "trigger" | null>(null);
+  const pendingQueueRowFocus = useRef<Element | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const isApple = appearance === "apple";
   const track = appleMusicTracks[trackIndex];
@@ -310,11 +311,13 @@ export function TrackExperiment() {
     playedTrack.current = null;
     // Only restore focus when selection removes its focused row/control.
     // Natural playback advancement should not take focus from another control.
+    pendingQueueRowFocus.current = queueOpen
+      ? document.activeElement?.closest(".queue-track") ?? null
+      : null;
     if (
       queueOpen &&
-      (document.activeElement?.closest(".queue-track") ||
-        (next === appleMusicTracks.length - 1 &&
-          document.activeElement?.getAttribute("aria-label") === "Next track"))
+      next === appleMusicTracks.length - 1 &&
+      document.activeElement?.getAttribute("aria-label") === "Next track"
     )
       pendingQueueFocus.current = "heading";
     setTrackIndex(next);
@@ -329,6 +332,10 @@ export function TrackExperiment() {
   }
 
   useLayoutEffect(() => {
+    const previousRow = pendingQueueRowFocus.current;
+    pendingQueueRowFocus.current = null;
+    if (queueOpen && previousRow && !previousRow.isConnected)
+      pendingQueueFocus.current ??= "heading";
     if (!pendingQueueFocus.current) return;
     const target =
       pendingQueueFocus.current === "heading"
@@ -404,6 +411,7 @@ export function TrackExperiment() {
             onClick={() => {
               setIsPlaying(false);
               setQueueOpen(false);
+              setAudioError("");
               setAppearance("default");
             }}
           >
@@ -414,6 +422,7 @@ export function TrackExperiment() {
             aria-pressed={isApple}
             onClick={() => {
               setIsPlaying(false);
+              setAudioError("");
               setAppearance("apple");
             }}
           >

@@ -732,7 +732,6 @@ button:focus-visible {
   overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: #ffffff40 transparent;
-  mask-image: linear-gradient(#000 calc(100% - 16px), transparent);
 }
 .music-queue ul {
   list-style: none;
