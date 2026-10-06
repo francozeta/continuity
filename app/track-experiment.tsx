@@ -1,7 +1,22 @@
 "use client";
 
-import { LayoutGroup, MotionConfig, arc, motion } from "motion/react";
-import { useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
+import Image from "next/image";
+import {
+  AnimatePresence,
+  LayoutGroup,
+  MotionConfig,
+  arc,
+  motion,
+  useIsPresent,
+} from "motion/react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type Ref,
+} from "react";
 import {
   ArrowUpRight,
   ChevronDown,
@@ -9,18 +24,31 @@ import {
   Play,
   RotateCcw,
   Star,
+  Rewind,
+  FastForward,
+  Volume1,
+  Volume2,
+  ListMusic,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTitle,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { appleMusicTracks } from "./apple-music-tracks";
 
 type TrackState = "compact" | "preview" | "player";
 const MotionButton = motion.create(Button);
 const MotionSkeleton = motion.create(Skeleton);
 // Keep the text beside the cover until it reaches the player's lower composition.
 const toPlayer = arc({ strength: 1.35, direction: "cw" });
-const toPreview = arc({ strength: 0.9, direction: "ccw" });
-const toNarrowPreview = arc({ strength: 1.8, direction: "ccw" });
+const toNarrowPlayer = arc({ strength: 0.95, direction: "cw" });
+const toPreview = arc({ strength: 0.95, direction: "ccw" });
+const toNarrowPreview = arc({ strength: 1, direction: "ccw" });
 
 // Motion 14's hook snapshots this preference at mount. Subscribe to the browser
 // so changing the OS setting also updates an already-open experiment.
@@ -41,12 +69,154 @@ const reducedMotionPreference = mediaPreference(
 );
 const narrowViewportPreference = mediaPreference("(max-width: 640px)", false);
 
+function formatTime(seconds: number) {
+  const value = Math.max(0, Math.floor(seconds));
+  return `${Math.floor(value / 60)}:${String(value % 60).padStart(2, "0")}`;
+}
+
+function PlayButton({
+  playing,
+  onClick,
+  compact = false,
+}: {
+  playing: boolean;
+  onClick: () => void;
+  compact?: boolean;
+}) {
+  return (
+    <Button
+      variant="ghost"
+      className={`play-button${compact ? " compact-play" : ""}`}
+      type="button"
+      aria-label={playing ? "Pause" : "Play"}
+      aria-pressed={playing}
+      onClick={onClick}
+    >
+      <span
+        className="t-icon-swap"
+        data-state={playing ? "b" : "a"}
+        aria-hidden="true"
+      >
+        <span className="t-icon" data-icon="a">
+          <Play className="size-[18px]" fill="currentColor" strokeWidth={0} />
+        </span>
+        <span className="t-icon" data-icon="b">
+          <Pause className="size-[18px]" fill="currentColor" strokeWidth={0} />
+        </span>
+      </span>
+    </Button>
+  );
+}
+
+function MiniPlayerControls({
+  playing,
+  onPlay,
+  onNext,
+  reduce,
+  ref,
+}: {
+  playing: boolean;
+  onPlay: () => void;
+  onNext: () => void;
+  reduce: boolean;
+  ref?: Ref<HTMLDivElement>;
+}) {
+  const present = useIsPresent();
+  return (
+    <motion.div
+      ref={ref}
+      className="compact-controls"
+      layout="position"
+      inert={!present}
+      initial={{ opacity: 0, filter: reduce ? "blur(0px)" : "blur(4px)" }}
+      animate={{ opacity: 1, filter: "blur(0px)" }}
+      exit={{ opacity: 0, filter: reduce ? "blur(0px)" : "blur(4px)" }}
+      transition={{ duration: 0.14 }}
+    >
+      <PlayButton playing={playing} compact onClick={onPlay} />
+      <Button
+        variant="ghost"
+        className="icon-button"
+        aria-label="Next track"
+        onClick={onNext}
+      >
+        <FastForward
+          className="size-5"
+          fill="currentColor"
+          strokeWidth={0}
+          aria-hidden="true"
+        />
+      </Button>
+    </motion.div>
+  );
+}
+
 export function TrackExperiment() {
+  const [appearance, setAppearance] = useState<"default" | "apple">("default");
   const [state, setState] = useState<TrackState>("compact");
-  const [previousState, setPreviousState] = useState<TrackState>("compact");
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [position, setPosition] = useState(0);
+  const [trackIndex, setTrackIndex] = useState(0);
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [volume, setVolume] = useState(50);
+  const [previewDuration, setPreviewDuration] = useState(30);
+  const [audioError, setAudioError] = useState("");
+  const [queueOpen, setQueueOpen] = useState(false);
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const isApple = appearance === "apple";
+  const track = appleMusicTracks[trackIndex];
+  const favorite = isApple ? favorites.includes(track.id) : isFavorite;
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    let current = true;
+    if (isApple && isPlaying) {
+      void audio.play().catch(() => {
+        if (!current) return;
+        setIsPlaying(false);
+        setAudioError("This preview is unavailable. Listen on Apple Music.");
+      });
+    } else {
+      audio.pause();
+    }
+    return () => {
+      current = false;
+    };
+  }, [isApple, isPlaying, trackIndex]);
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.volume = volume / 100;
+  }, [volume]);
+
+  function seek(value: number | readonly number[]) {
+    const next = typeof value === "number" ? value : value[0];
+    setPosition(next);
+    if (audioRef.current && Number.isFinite(audioRef.current.duration)) {
+      audioRef.current.currentTime = (next / 100) * audioRef.current.duration;
+    }
+  }
+
+  function selectTrack(index: number) {
+    if (index === trackIndex) return;
+    setTrackIndex((index + appleMusicTracks.length) % appleMusicTracks.length);
+    setPosition(0);
+    setPreviewDuration(30);
+    setAudioError("");
+  }
+
+  function toggleFavorite() {
+    if (!isApple) {
+      setIsFavorite(!isFavorite);
+      return;
+    }
+    setFavorites((current) =>
+      favorite
+        ? current.filter((id) => id !== track.id)
+        : [...current, track.id],
+    );
+  }
   const prefersReducedMotion = useSyncExternalStore(
     reducedMotionPreference.subscribe,
     reducedMotionPreference.getSnapshot,
@@ -63,7 +233,6 @@ export function TrackExperiment() {
   const pendingFocus = useRef<"open" | "back" | "expand" | null>(null);
 
   function changeState(next: TrackState) {
-    setPreviousState(state);
     pendingFocus.current =
       next === "compact" ? "open" : state === "player" ? "expand" : "back";
     setState(next);
@@ -90,46 +259,107 @@ export function TrackExperiment() {
     // creation. A reactive instant transition reduces travel without remounting.
     <MotionConfig transition={{ layout: transition }}>
       <LayoutGroup id="track-experiment">
-        <div className="track-stage" data-state={state}>
+        <div
+          className="comparison-toolbar"
+          role="group"
+          aria-label="Component appearance"
+        >
+          <Button
+            variant="ghost"
+            aria-pressed={!isApple}
+            onClick={() => {
+              setIsPlaying(false);
+              setQueueOpen(false);
+              setAppearance("default");
+            }}
+          >
+            Default
+          </Button>
+          <Button
+            variant="ghost"
+            aria-pressed={isApple}
+            onClick={() => {
+              setIsPlaying(false);
+              setAppearance("apple");
+            }}
+          >
+            Apple Music
+          </Button>
+        </div>
+        <div
+          className="track-stage"
+          data-state={state}
+          data-appearance={appearance}
+        >
           <motion.section
             id="track-details"
             layout
             className="track-surface"
             data-state={state}
+            data-appearance={appearance}
             style={{
               borderRadius:
                 state === "compact" ? 22 : state === "preview" ? 28 : 34,
             }}
-            aria-label={`Track ${state}`}
+            aria-label={`${isApple ? track.title : "Track"} ${state}`}
             aria-describedby="track-demo-description"
             onKeyDown={(event) => {
-              if (event.key === "Escape" && state !== "compact") {
+              if (
+                event.key === "Escape" &&
+                state !== "compact" &&
+                !event.defaultPrevented
+              ) {
                 event.preventDefault();
                 changeState(state === "player" ? "preview" : "compact");
               }
             }}
           >
+            {isApple && (
+              <div className="track-backdrop" aria-hidden="true">
+                <Image
+                  src={track.artwork}
+                  alt=""
+                  fill
+                  sizes="(max-width: 640px) 100vw, 400px"
+                  draggable={false}
+                />
+              </div>
+            )}
             <MotionSkeleton
               className="track-cover"
               layoutId="track:cover"
               layout
               style={{ borderRadius: state === "compact" ? 10 : 18 }}
               aria-hidden="true"
-            />
+            >
+              {isApple && (
+                <Image
+                  src={track.artwork}
+                  alt=""
+                  width={700}
+                  height={700}
+                  sizes="(max-width: 640px) 100vw, 400px"
+                  loading="eager"
+                  draggable={false}
+                />
+              )}
+            </MotionSkeleton>
             <motion.div
               className="track-identity"
               layout
               layoutAnchor={false}
-              aria-hidden="true"
+              aria-hidden={!isApple}
               transition={{
                 layout: {
                   ...transition,
                   path: prefersReducedMotion
                     ? undefined
                     : state === "player"
-                      ? toPlayer
+                      ? isNarrow
+                        ? toNarrowPlayer
+                        : toPlayer
                       : state === "preview"
-                        ? isNarrow && previousState === "player"
+                        ? isNarrow
                           ? toNarrowPreview
                           : toPreview
                         : undefined,
@@ -141,15 +371,24 @@ export function TrackExperiment() {
                 layoutId="track:title"
                 layout
                 style={{ borderRadius: 6 }}
-              />
+              >
+                {isApple && (
+                  <motion.h2 layout="position">{track.title}</motion.h2>
+                )}
+              </MotionSkeleton>
               <MotionSkeleton
                 className="track-artist"
                 layoutId="track:artist"
                 layout
                 style={{ borderRadius: 6 }}
-              />
+              >
+                {isApple && (
+                  <motion.p layout="position">{track.artist}</motion.p>
+                )}
+              </MotionSkeleton>
             </motion.div>
-            <Button
+            <MotionButton
+              layout="position"
               variant="ghost"
               ref={openRef}
               className="track-open"
@@ -159,15 +398,18 @@ export function TrackExperiment() {
               aria-controls="track-details"
               aria-label="Open preview"
               onClick={() => changeState("preview")}
-            >
-              <span className="open-arrow">
-                <ArrowUpRight
-                  aria-hidden="true"
-                  className="size-[18px]"
-                  strokeWidth={1.5}
+            ></MotionButton>
+            <AnimatePresence initial={false} mode="popLayout">
+              {isApple && state === "compact" && (
+                <MiniPlayerControls
+                  key="mini-controls"
+                  playing={isPlaying}
+                  onPlay={() => setIsPlaying(!isPlaying)}
+                  onNext={() => selectTrack(trackIndex + 1)}
+                  reduce={prefersReducedMotion}
                 />
-              </span>
-            </Button>
+              )}
+            </AnimatePresence>
             {state !== "compact" && (
               <>
                 <MotionButton
@@ -195,7 +437,7 @@ export function TrackExperiment() {
                     key={state}
                     layout="position"
                     className="track-details"
-                    aria-hidden="true"
+                    aria-hidden={!isApple}
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     transition={{
@@ -204,9 +446,35 @@ export function TrackExperiment() {
                       layout: transition,
                     }}
                   >
-                    <span />
-                    <span />
+                    {isApple ? (
+                      <>
+                        <p>{track.album}</p>
+                        <span className="preview-label">Audio preview</span>
+                      </>
+                    ) : (
+                      <>
+                        <span />
+                        <span />
+                      </>
+                    )}
                   </motion.div>
+                )}
+                {isApple && state === "player" && (
+                  <MotionButton
+                    variant="ghost"
+                    layout="position"
+                    className="apple-favorite icon-button"
+                    aria-label={favorite ? "Remove from favorites" : "Favorite"}
+                    aria-pressed={favorite}
+                    onClick={toggleFavorite}
+                  >
+                    <Star
+                      className="size-5"
+                      fill={favorite ? "currentColor" : "none"}
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
+                  </MotionButton>
                 )}
                 {state === "player" && (
                   <motion.div
@@ -222,87 +490,197 @@ export function TrackExperiment() {
                       max={100}
                       step={1}
                       value={[position]}
-                      getAriaLabel={() => "Progress"}
-                      getAriaValueText={(_, value) => `${value}%`}
-                      onValueChange={(value) =>
-                        setPosition(
-                          typeof value === "number" ? value : value[0],
-                        )
+                      getAriaLabel={() =>
+                        isApple ? "Preview position" : "Progress"
                       }
+                      getAriaValueText={(_, value) =>
+                        isApple
+                          ? `${formatTime((value / 100) * previewDuration)} of ${formatTime(previewDuration)}`
+                          : `${value}%`
+                      }
+                      onValueChange={seek}
                     />
                     <div className="timeline-times" aria-hidden="true">
-                      <span />
-                      <span />
+                      {isApple ? (
+                        <>
+                          <span>
+                            {formatTime((position / 100) * previewDuration)}
+                          </span>
+                          <span>
+                            −
+                            {formatTime(previewDuration * (1 - position / 100))}
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span />
+                          <span />
+                        </>
+                      )}
                     </div>
                   </motion.div>
                 )}
                 <motion.div
                   layout="position"
                   className="track-controls"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
+                  initial={{
+                    opacity: 0,
+                    filter: prefersReducedMotion ? "blur(0px)" : "blur(4px)",
+                  }}
+                  animate={{ opacity: 1, filter: "blur(0px)" }}
                   transition={{ duration: 0.16, layout: transition }}
                 >
-                  <Button
-                    variant="ghost"
-                    className="favorite-button icon-button"
-                    type="button"
-                    aria-label={
-                      isFavorite ? "Remove from favorites" : "Favorite"
-                    }
-                    aria-pressed={isFavorite}
-                    onClick={() => setIsFavorite(!isFavorite)}
-                  >
-                    <Star
-                      aria-hidden="true"
-                      className="size-[19px]"
-                      fill={isFavorite ? "currentColor" : "none"}
-                      strokeWidth={1.5}
-                    />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    className="play-button"
-                    type="button"
-                    aria-label={isPlaying ? "Pause" : "Play"}
-                    aria-pressed={isPlaying}
-                    onClick={() => setIsPlaying(!isPlaying)}
-                  >
-                    <span
-                      className="t-icon-swap"
-                      data-state={isPlaying ? "b" : "a"}
-                      aria-hidden="true"
+                  {(!isApple || state === "preview") && (
+                    <Button
+                      variant="ghost"
+                      className="favorite-button icon-button"
+                      type="button"
+                      aria-label={
+                        favorite ? "Remove from favorites" : "Favorite"
+                      }
+                      aria-pressed={favorite}
+                      onClick={toggleFavorite}
                     >
-                      <span className="t-icon" data-icon="a">
-                        <Play
-                          className="size-[18px]"
-                          fill="currentColor"
-                          strokeWidth={0}
-                        />
-                      </span>
-                      <span className="t-icon" data-icon="b">
-                        <Pause
-                          className="size-[18px]"
-                          fill="currentColor"
-                          strokeWidth={0}
-                        />
-                      </span>
-                    </span>
-                  </Button>
+                      <Star
+                        aria-hidden="true"
+                        className="size-[19px]"
+                        fill={favorite ? "currentColor" : "none"}
+                        strokeWidth={1.5}
+                      />
+                    </Button>
+                  )}
+                  {isApple && (
+                    <Button
+                      variant="ghost"
+                      className="icon-button previous-button"
+                      aria-label="Previous track"
+                      onClick={() =>
+                        position > 10 ? seek(0) : selectTrack(trackIndex - 1)
+                      }
+                    >
+                      <Rewind
+                        className="size-7"
+                        fill="currentColor"
+                        strokeWidth={0}
+                        aria-hidden="true"
+                      />
+                    </Button>
+                  )}
+                  <PlayButton
+                    playing={isPlaying}
+                    onClick={() => {
+                      setAudioError("");
+                      setIsPlaying(!isPlaying);
+                    }}
+                  />
                   <Button
                     variant="ghost"
                     className="icon-button restart-button"
                     type="button"
-                    aria-label="Reset progress"
-                    onClick={() => setPosition(0)}
+                    aria-label={isApple ? "Next track" : "Reset progress"}
+                    onClick={() =>
+                      isApple ? selectTrack(trackIndex + 1) : seek(0)
+                    }
                   >
-                    <RotateCcw
-                      aria-hidden="true"
-                      className="size-[19px]"
-                      strokeWidth={1.5}
-                    />
+                    {isApple ? (
+                      <FastForward
+                        className="size-7"
+                        fill="currentColor"
+                        strokeWidth={0}
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <RotateCcw
+                        aria-hidden="true"
+                        className="size-[19px]"
+                        strokeWidth={1.5}
+                      />
+                    )}
                   </Button>
                 </motion.div>
+                {isApple && state === "player" && (
+                  <motion.div
+                    layout="position"
+                    className="apple-extras"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.16, layout: transition }}
+                  >
+                    <div className="volume-row">
+                      <Volume1 aria-hidden="true" className="size-4" />
+                      <Slider
+                        min={0}
+                        max={100}
+                        step={1}
+                        value={[volume]}
+                        getAriaLabel={() => "Volume"}
+                        getAriaValueText={(_, value) => `${value}%`}
+                        onValueChange={(value) =>
+                          setVolume(
+                            typeof value === "number" ? value : value[0],
+                          )
+                        }
+                      />
+                      <Volume2 aria-hidden="true" className="size-4" />
+                    </div>
+                    <div className="apple-footer">
+                      <p className="preview-disclosure">
+                        30-second audio preview
+                      </p>
+                      <Popover open={queueOpen} onOpenChange={setQueueOpen}>
+                        <PopoverTrigger
+                          render={
+                            <Button
+                              variant="ghost"
+                              className="icon-button"
+                              aria-label="Playing next"
+                            />
+                          }
+                        >
+                          <ListMusic className="size-5" aria-hidden="true" />
+                        </PopoverTrigger>
+                        <PopoverContent
+                          side="top"
+                          align="end"
+                          className="music-queue"
+                        >
+                          <PopoverTitle>Playing next</PopoverTitle>
+                          {appleMusicTracks.map((item, index) => (
+                            <Button
+                              key={item.id}
+                              variant="ghost"
+                              className="queue-track"
+                              aria-current={
+                                index === trackIndex ? "true" : undefined
+                              }
+                              onClick={() => selectTrack(index)}
+                            >
+                              <span>
+                                {item.title}
+                                <small>{item.artist}</small>
+                              </span>
+                              {index === trackIndex && (
+                                <span className="queue-current">Current</span>
+                              )}
+                            </Button>
+                          ))}
+                          <a
+                            className="music-source"
+                            href={track.url}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            Listen on Apple Music
+                            <ArrowUpRight
+                              className="size-3"
+                              aria-hidden="true"
+                            />
+                          </a>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+                  </motion.div>
+                )}
                 {state === "preview" && (
                   <MotionButton
                     variant="ghost"
@@ -319,9 +697,39 @@ export function TrackExperiment() {
             )}
           </motion.section>
         </div>
+        <audio
+          ref={audioRef}
+          src={track.preview}
+          preload="none"
+          onLoadedMetadata={(event) => {
+            const audio = event.currentTarget;
+            if (Number.isFinite(audio.duration)) {
+              setPreviewDuration(audio.duration);
+              audio.currentTime = (position / 100) * audio.duration;
+            }
+          }}
+          onTimeUpdate={(event) => {
+            const audio = event.currentTarget;
+            if (isApple && Number.isFinite(audio.duration))
+              setPosition((audio.currentTime / audio.duration) * 100);
+          }}
+          onEnded={() => setIsPlaying(false)}
+          onError={() => {
+            if (isApple) {
+              setIsPlaying(false);
+              setAudioError(
+                "This preview is unavailable. Listen on Apple Music.",
+              );
+            }
+          }}
+        />
+        <p className={audioError ? "audio-notice" : "sr-only"} role="status">
+          {audioError}
+        </p>
         <p id="track-demo-description" className="sr-only">
-          Interactive track layout prototype with static placeholders. Controls
-          demonstrate state changes without audio.
+          {isApple
+            ? "Independent Apple Music interface study with public catalog artwork and short audio previews."
+            : "Experimental default presentation with static placeholders. Controls demonstrate state changes without audio."}
         </p>
         <p className="sr-only" role="status">
           {state === "compact" ? "" : `Track ${state} opened.`}

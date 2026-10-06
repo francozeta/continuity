@@ -91,13 +91,14 @@ button:focus-visible {
 }
 
 .track-stage {
-  min-height: 100svh;
+  min-height: calc(100svh - 84px);
   width: 100%;
   padding: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
 }
+
 .track-surface {
   position: relative;
   overflow: hidden;
@@ -156,14 +157,11 @@ button:focus-visible {
   border-radius: inherit;
   background: transparent;
 }
-.open-arrow {
-  display: grid;
-  place-items: center;
-  position: absolute;
-  right: 20px;
-  top: 0;
-  bottom: 0;
-  color: #a3a3aa;
+/* The whole surface provides the compact focus indicator; avoid two scaled rings. */
+.track-open:focus-visible {
+  outline: none;
+  box-shadow: none;
+  border-color: transparent;
 }
 .track-open:hover {
   background: #ffffff03;
@@ -396,5 +394,362 @@ button:focus-visible {
   }
   .track-surface[data-state="player"] {
     padding: 64px 28px 32px;
+  }
+}
+
+.comparison-toolbar {
+  display: flex;
+  width: fit-content;
+  gap: 4px;
+  margin: 24px auto 8px;
+  padding: 4px;
+  border-radius: 999px;
+  background: #1c1c1e;
+  box-shadow: 0 0 0 1px #ffffff08;
+}
+.comparison-toolbar [data-slot="button"] {
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  color: #bcbcc2;
+  font-size: 13px;
+}
+.comparison-toolbar [aria-pressed="true"] {
+  background: #333336;
+  color: var(--foreground);
+}
+.comparison-toolbar [data-slot="button"]:focus-visible {
+  outline-offset: 0;
+}
+.track-title h2,
+.track-artist p {
+  margin: 0;
+  font: inherit;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Applied product study. The default shapes and shared layout nodes stay intact. */
+.track-surface[data-appearance="apple"] {
+  --surface: #242426;
+  isolation: isolate;
+  background: var(--surface);
+  color: #fff;
+}
+.track-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+.track-backdrop img {
+  object-fit: cover;
+  filter: blur(36px);
+  transform: scale(1.2);
+}
+.track-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(#00000040, #000000c7 65%, #000000db);
+}
+[data-appearance="apple"] .track-cover {
+  overflow: hidden;
+  background: #34454e;
+  box-shadow: inset 0 0 0 1px #ffffff1a;
+}
+.track-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+[data-appearance="apple"] .track-identity {
+  max-width: 100%;
+  width: 100%;
+}
+[data-appearance="apple"] .track-title,
+[data-appearance="apple"] .track-artist {
+  width: 100%;
+  height: auto;
+  background: transparent;
+  border-radius: 0;
+  line-height: 1.3;
+}
+[data-appearance="apple"] .track-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+[data-appearance="apple"] .track-artist {
+  margin-top: 2px;
+  font-size: 14px;
+  color: #ffffffbf;
+}
+.track-surface[data-appearance="apple"][data-state="compact"] {
+  width: 400px;
+  padding: 8px;
+  grid-template-columns: 48px minmax(0, 1fr) 88px;
+  grid-template-areas: "cover identity compact-controls";
+  column-gap: 10px;
+  background: #242426e6;
+  box-shadow:
+    inset 0 1px 0 #ffffff24,
+    0 4px 16px #00000026;
+  backdrop-filter: blur(20px);
+}
+[data-appearance="apple"][data-state="compact"] .track-open {
+  right: 96px;
+  z-index: 1;
+}
+.compact-controls {
+  grid-area: compact-controls;
+  display: flex;
+  align-items: center;
+}
+.compact-controls .play-button,
+.compact-controls .icon-button {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+  padding: 12px;
+  color: white;
+  background: transparent;
+}
+.track-surface[data-appearance="apple"][data-state="preview"] {
+  width: 400px;
+}
+[data-appearance="apple"][data-state="preview"] .track-details {
+  gap: 4px;
+  justify-items: start;
+}
+[data-appearance="apple"] .track-details p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #ffffffbf;
+}
+[data-appearance="apple"] .track-details .preview-label {
+  width: auto;
+  height: auto;
+  background: transparent;
+  color: #ffffffad;
+  font-size: 12px;
+}
+[data-appearance="apple"] .track-controls {
+  gap: 24px;
+}
+[data-appearance="apple"] .icon-button {
+  color: #fff;
+}
+[data-appearance="apple"] .play-button {
+  color: #fff;
+  background: transparent;
+}
+[data-appearance="apple"] .play-button svg {
+  width: 32px;
+  height: 32px;
+}
+[data-appearance="apple"] .compact-play svg {
+  width: 20px;
+  height: 20px;
+}
+[data-appearance="apple"] .expand-button {
+  color: #fff;
+  background: #ffffff14;
+  box-shadow: inset 0 1px 0 #ffffff17;
+}
+.track-surface[data-appearance="apple"][data-state="player"] {
+  width: 400px;
+  padding: 24px 28px 24px;
+  grid-template-areas: "cover" "identity" "timeline" "controls" "extras";
+}
+[data-appearance="apple"][data-state="player"] .track-cover {
+  position: relative;
+  width: calc(100% + 56px);
+  max-width: none;
+  height: clamp(180px, calc(100svh - 520px), 360px);
+  aspect-ratio: auto;
+  margin-top: -24px;
+  border-radius: 0 !important;
+  box-shadow: none;
+  mask-image: linear-gradient(#000 68%, transparent);
+}
+[data-appearance="apple"][data-state="player"] .track-cover img {
+  object-position: center 35%;
+}
+[data-appearance="apple"][data-state="player"] .track-identity {
+  width: calc(100% - 56px);
+  margin-top: 16px;
+}
+[data-appearance="apple"][data-state="player"] .track-title {
+  font-size: 22px;
+}
+[data-appearance="apple"][data-state="player"] .track-title h2 {
+  white-space: normal;
+  overflow: visible;
+  text-wrap: balance;
+}
+[data-appearance="apple"][data-state="player"] .track-artist {
+  font-size: 17px;
+}
+.apple-favorite {
+  grid-area: identity;
+  justify-self: end;
+  align-self: center;
+  margin-top: 16px;
+}
+[data-appearance="apple"][data-state="player"] .back-button {
+  z-index: 2;
+  color: #fff;
+  background: transparent;
+}
+[data-appearance="apple"][data-state="player"] .back-button svg {
+  display: none;
+}
+[data-appearance="apple"][data-state="player"] .back-button::before {
+  content: "";
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: #ffffff80;
+}
+[data-appearance="apple"] .track-timeline {
+  margin-top: 12px;
+}
+[data-appearance="apple"] [data-slot="slider-track"] {
+  background: #ffffff40;
+}
+[data-appearance="apple"] [data-slot="slider-range"] {
+  background: #ffffffad;
+}
+/* Keep Base UI's native input and drag target; only remove the visible knob. */
+[data-appearance="apple"] [data-slot="slider-thumb"] {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  outline: none;
+}
+[data-appearance="apple"] [data-slot="slider-thumb"]:has(input:focus-visible) {
+  outline: none;
+}
+[data-appearance="apple"]
+  [data-slot="slider-control"]:has(input:focus-visible)
+  [data-slot="slider-track"] {
+  outline: 2px solid white;
+  outline-offset: 5px;
+}
+[data-appearance="apple"] .timeline-times {
+  margin-top: -6px;
+  color: #ffffffbf;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+[data-appearance="apple"] .timeline-times span {
+  width: auto;
+  height: auto;
+  background: transparent;
+}
+[data-appearance="apple"][data-state="player"] .track-controls {
+  gap: 40px;
+  margin-top: 16px;
+}
+.apple-extras {
+  grid-area: extras;
+  width: 100%;
+  margin-top: 20px;
+}
+.volume-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #ffffffad;
+}
+.volume-row > svg {
+  flex-shrink: 0;
+}
+.apple-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+.music-source {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 44px;
+  color: #fff;
+  font-size: 13px;
+}
+.music-source:focus-visible,
+.music-queue .queue-track:focus-visible {
+  outline: 2px solid;
+  outline-offset: 2px;
+}
+.preview-disclosure {
+  margin: 0;
+  font-size: 11px;
+  color: #ffffffbf;
+  line-height: 1.5;
+}
+.music-queue {
+  width: min(340px, calc(100vw - 32px));
+  padding: 16px;
+  border-radius: 20px;
+}
+.music-queue .queue-track {
+  height: auto;
+  min-height: 52px;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px;
+  text-align: left;
+  white-space: normal;
+}
+.queue-track > span:first-child {
+  min-width: 0;
+  line-height: 1.4;
+}
+.queue-track small {
+  display: block;
+  margin-top: 2px;
+  color: #bcbcc2;
+  font-size: 12px;
+}
+.queue-current {
+  color: #bcbcc2;
+  font-size: 11px;
+}
+.audio-notice {
+  margin: 0 auto 24px;
+  max-width: 360px;
+  padding: 0 24px;
+  color: #bcbcc2;
+  font-size: 13px;
+  text-align: center;
+}
+@media (max-width: 640px) {
+  .track-surface[data-appearance="apple"][data-state="preview"],
+  .track-surface[data-appearance="apple"][data-state="player"] {
+    width: 100%;
+    max-width: 420px;
+  }
+  .track-stage[data-appearance="apple"][data-state="compact"] {
+    padding-inline: 16px;
+  }
+  .track-surface[data-appearance="apple"][data-state="compact"] {
+    width: 100%;
+    max-width: 400px;
+  }
+  [data-appearance="apple"][data-state="preview"] .track-controls {
+    gap: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .music-queue {
+    animation: none !important;
+    transition: none !important;
   }
 }
