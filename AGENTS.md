@@ -54,7 +54,7 @@ Read `docs/research.md` before proposing a competing abstraction.
   parts inside presence. The compact surface supplies one keyboard focus ring.
 - Apple progress/volume bars have no visible thumb; preserve Base UI's native
   input, 44px control and track focus ring. Keep the artwork-derived dark gradient
-  and fading square artwork in player, as requested. The integrated queue is a
+  and edge-to-edge fading artwork in player, as requested. The integrated queue is a
   player panel, not a fourth presentation state: the three shared nodes form its
   small current-track header. The source link lives in the Base UI actions popover.
 - Upcoming rows exclude the current track. Playback advances through the finite

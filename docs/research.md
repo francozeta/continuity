@@ -177,3 +177,8 @@ and session history comes from actual audio playing events. Lyrics, casting,
 recommendation AutoPlay, shuffle, repeat and editable queue order remain outside
 this pass. Reusing the same three nodes in the queue header is useful visual
 evidence, but the single-owner implementation still does not justify extraction.
+
+The subsequent review explicitly restores the first edge-to-edge, cropped hero
+cover while retaining the current controls and integrated queue. This supersedes
+the square player-artwork choice above. The cover is a deliberate visual preference
+for this web study, not a claim of exact native Apple Music artwork presentation.

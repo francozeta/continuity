@@ -461,3 +461,32 @@ on desktop. Local recordings, a 10%-speed review and frame probes are in
 The queue demonstrates another presentation within one track owner. Direct React
 state, CSS and Motion still handle its coordination. It does not supply evidence
 for extracting a Continuity public API or packaging a component library.
+
+## Cover restoration and review handoff — 2026-10-06
+
+The latest review restores the original edge-to-edge, cropped player artwork
+with its dark fade. The source, selection, backdrop and current control/queue
+design remain intact. The artwork extends through the top padding; its height is
+bounded by the player's content width so narrow screens preserve the previous
+layout below the cover. Container-relative sizing avoids a viewport-specific
+scrollbar assumption. This supersedes the square cover choice above.
+
+Before/after measurements across five viewports and three settled presentations
+(Apple player, Apple queue, Default player) found no changes to surface size,
+identity, timeline, transport or extras geometry. Queue and Default artwork bounds
+also remain unchanged. Player text arcs are slightly flatter: return/reversal
+probes exposed a few transient pixels outside the surface with the wider cover.
+Six final desktop/mobile probes sampled 247 frames, with no text-range clipping
+or cover intersections and no material icon aspect distortion. A 10%-speed
+recording and selected frames were inspected; these checks do not establish
+native gesture behavior or pixel-perfect Apple parity.
+
+Production lint/build, the 36 applied queue checks and five Default regression
+checks pass after restoration. The five queue viewport audits and three Default
+state audits report zero axe violations.
+Local captures and reports remain in ignored `output/playwright/`. The README now
+describes the integrated queue, contextual source action and dismissal chevron.
+The next review should address desktop composition, real dismissal gestures and
+coordination across an independent owner or portal, in that order. Extraction
+remains deferred until those cases provide evidence that direct Motion code is
+repeating coordination that a smaller semantic layer could actually simplify.

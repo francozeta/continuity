@@ -72,12 +72,14 @@ Use the compact surface to open preview, then **Open player**. The downward
 chevron and Escape return one state at a time. Default remains silent. The Apple
 Music study uses real public catalog metadata, artwork and streamed short previews;
 Play/Pause, seek, volume, previous/next and the queue control that preview audio.
-Favorites stay local and track-specific. The queue includes Listen on Apple Music
-to open the source song. The sample selects Underworld, Aphex Twin and Burial.
+Favorites stay local and track-specific. The integrated queue shows upcoming tracks
+and actual playback history; selecting a row retains the player and audio owner.
+The track-actions popover includes Listen on Apple Music to open the source song.
+The sample selects Underworld, Aphex Twin and Burial.
 There is no account connection or full-song playback. Catalog examples are
 recorded in `app/apple-music-tracks.ts`; external media can become unavailable.
 
-The page contains the selector and experiment. Buttons, sliders and the queue
+The page contains the selector and experiment. Buttons, sliders and the track-actions
 popover use shadcn's Base UI primitives. Skeleton has no pulse or shimmer. The
 applied player takes cues from [Apple's current player controls](https://support.apple.com/en-euro/guide/iphone/iph676daac9b/27/ios/27).
 Contextual controls use a brief blur/fade, following [Jakub's shared-layout example](https://jakub.kr/work/shared-layout-animations),
@@ -86,8 +88,9 @@ while stable shared parts stay outside presence. Play/Pause retains the
 correction.
 
 The applied player has thumb-free progress/volume bars with 44px drag targets and
-keyboard focus on the track, an artwork-derived backdrop and a top dismissal
-handle. Default retains its neutral slider styling.
+keyboard focus on the track, an artwork-derived backdrop, an edge-to-edge cover
+fading into the player and a top dismissal chevron. Default retains its neutral
+slider styling.
 
 Default is a developer-facing experiment baseline, not a released component API.
 The comparison evaluates customization without inventing a Continuity runtime.
