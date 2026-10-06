@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" fill="none">
+  <defs>
+    <pattern id="grain" width="7" height="7" patternUnits="userSpaceOnUse"><path d="M1 2h1m3 3h1" stroke="#b4b99c" stroke-opacity=".12"/></pattern>
+    <pattern id="lines" width="4" height="4" patternUnits="userSpaceOnUse" patternTransform="rotate(-32)"><path d="M0 0h4" stroke="#c5cbb1" stroke-width="1"/></pattern>
+    <clipPath id="sphere"><circle cx="320" cy="311" r="154"/></clipPath>
+  </defs>
+  <path fill="#b5baa5" d="M0 0h640v640H0z"/>
+  <path fill="#151b13" d="M18 18h604v604H18z"/>
+  <path fill="url(#grain)" d="M18 18h604v604H18z"/>
+  <circle cx="320" cy="311" r="154" fill="#a6b093"/>
+  <g clip-path="url(#sphere)">
+    <path fill="url(#lines)" d="M130 120h390v390H130z"/>
+    <ellipse cx="379" cy="342" rx="142" ry="169" fill="#1d261a"/>
+    <g stroke="#b5c0a0" stroke-opacity=".55" stroke-width="1.2">
+      <ellipse cx="320" cy="311" rx="146" ry="37" transform="rotate(-32 320 311)"/>
+      <ellipse cx="320" cy="311" rx="146" ry="64" transform="rotate(-32 320 311)"/>
+      <ellipse cx="320" cy="311" rx="146" ry="95" transform="rotate(-32 320 311)"/>
+      <ellipse cx="320" cy="311" rx="146" ry="123" transform="rotate(-32 320 311)"/>
+      <path d="M279 122c110 107 122 261 58 381M247 134c104 102 119 248 51 370M220 155c92 96 106 226 42 342M197 189c81 76 99 186 36 287M183 228c69 57 90 145 31 219"/>
+    </g>
+  </g>
+  <ellipse cx="320" cy="311" rx="244" ry="71" transform="rotate(-32 320 311)" stroke="#d4dac2" stroke-width="2"/>
+  <path d="M116 441c21 18 83 18 156-2" stroke="#151b13" stroke-width="6"/>
+  <circle cx="501" cy="201" r="5" fill="#d4dac2"/>
+  <path d="M54 553h532M54 572h95M561 572h25" stroke="#c0c7ac" stroke-opacity=".5"/>
+  <text x="54" y="90" fill="#d4dac2" font-family="monospace" font-size="14" letter-spacing="4">TEARDROP</text>
+  <text x="586" y="591" text-anchor="end" fill="#b3bc9e" font-family="monospace" font-size="10" letter-spacing="2">STUDY 003</text>
+</svg>

@@ -110,6 +110,31 @@ After the interaction works, extract the smallest candidate abstraction and comp
 
 ## Evidence log
 
+### Phase 0 — reconciliation (2026-10-05, America/Lima)
+
+- Local folder had no `.git`; all source was therefore untracked, not a divergent
+  local commit history. Backed up the original files outside the repository.
+- Attached the existing feature branch without overwriting local files, committed
+  the App Router setup and merged `origin/main`. The latter only expanded research.
+- Kept Next 16.3.8, React 19.2.8, TypeScript, Tailwind 4 and pnpm 11.23.0.
+  Generated the missing lockfile. Motion is the only added runtime dependency.
+- Read Issue #1 and all product documents. Starter opened in Chromium before edits.
+
+### Phase 1 — direct Motion baseline
+
+- A single persistent section changes its CSS grid instead of mounting unrelated
+  cards. Cover/title/artist are the only named identities. No measurement code,
+  portal or transition scheduler is needed yet.
+- Focus is application logic: opening focuses Close; closing restores the track
+  trigger. It cannot wait for an animation callback because reversal is immediate.
+- Preview becomes an in-canvas bottom sheet through CSS alone. It remains a
+  nonmodal disclosure at both sizes, so no breakpoint-specific focus trap is needed.
+- Playback/saved state belongs to the persistent track owner, outside presentation.
+  Controls are a silent demonstration, with no audio or external service.
+- This topology makes `layoutId` redundant with persistent `layout` nodes. Keep the
+  three explicit identities while investigating the third state; do not invent a
+  wrapper to make them look more necessary.
+
 While building, record:
 
 - repeated IDs or naming conventions
