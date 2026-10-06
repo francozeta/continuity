@@ -41,3 +41,17 @@ Planned: `continuity.francozeta.com`
 ## License
 
 TBD
+
+## Local development
+
+The existing Next.js App Router setup uses React, TypeScript, Tailwind CSS 4,
+and pnpm. Keep this app as the experiment host.
+
+```sh
+pnpm install
+pnpm dev
+```
+
+Open http://localhost:3000. `pnpm lint` checks source and `pnpm build` checks
+production compilation. Node.js 20.9+ is required by Next.js; the package manager
+version is recorded in `package.json`.
