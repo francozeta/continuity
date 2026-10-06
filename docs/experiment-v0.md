@@ -490,3 +490,20 @@ The next review should address desktop composition, real dismissal gestures and
 coordination across an independent owner or portal, in that order. Extraction
 remains deferred until those cases provide evidence that direct Motion code is
 repeating coordination that a smaller semantic layer could actually simplify.
+
+## Published experiment — 2026-10-06
+
+The production demo is live at [continuity.francozeta.com](https://continuity.francozeta.com)
+on the Vercel project `continuity`. The cloud Next.js build passed using the pinned
+pnpm 11.23.0 through Corepack. Deployment `dpl_J3QwwnstNnMjm8G7vew1aUxdsuq8`
+contains application commit `7f4d802`; subsequent deployment documentation does
+not change that application. The domain is verified and serves public HTTPS with
+an HTTP 200 response.
+
+Eight hosted smoke checks passed in Chromium: the applied player renders at the
+custom URL, artwork loads, real preview audio plays, the upcoming queue opens,
+the 390×844 queue has no horizontal overflow, Escape restores its trigger,
+switching to Default retains player state and pauses audio, and those interactions
+produce no runtime errors. Desktop and mobile captures were inspected and remain
+in ignored `output/playwright/`. This deployment check supplements the local
+evidence above; it does not establish additional browser or native-gesture parity.

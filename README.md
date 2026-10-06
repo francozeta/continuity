@@ -38,7 +38,7 @@ If the experiment proves useful, the primitive will be extracted from the implem
 
 ## Site
 
-Planned: `continuity.francozeta.com`
+Live: [continuity.francozeta.com](https://continuity.francozeta.com).
 
 For the current implementation and verification evidence, read
 [`docs/experiment-v0.md`](docs/experiment-v0.md). Research and source links live in
@@ -99,3 +99,20 @@ Preview and player become bottom-aligned sheets at narrow sizes. They remain
 nonmodal regions, so Tab follows the document. Resize either
 expanded state without resetting the track. Reduced motion replaces spatial travel
 with an immediate layout change and a short contextual fade.
+
+## Deployment
+
+The Vercel project is `continuity` in the `franco-zetas-projects` scope. Production
+uses the domain above. `vercel.json` selects Next.js, and the project environment
+sets `ENABLE_EXPERIMENTAL_COREPACK=1` for Production and Preview so Vercel uses
+the pnpm version pinned in `package.json`.
+
+From an authenticated checkout:
+
+```sh
+vercel link --project continuity --scope franco-zetas-projects
+vercel deploy --prod --scope franco-zetas-projects
+```
+
+Deployments currently run through the CLI. `.vercelignore` excludes local build
+output, browser captures and environment files from uploads.
