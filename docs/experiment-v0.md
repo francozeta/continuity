@@ -419,3 +419,45 @@ Safari and cross-browser material rendering were not verified in this review.
 Design verdict: needs changes, chiefly desktop composition, artwork handling and
 applied transition choreography. The existing direct-Motion extraction decision
 is unchanged. Local review probes and captures remain in `output/playwright/`.
+
+## Integrated Apple queue — 2026-10-06
+
+- Queue visibility is an internal player panel. The existing cover/title/artist
+  nodes shrink into the current-track header; no fourth `TrackState`, duplicate
+  current-track representation or additional named projection identity was added.
+  Rows have actual catalog artwork, title and artist. Playback controls remain
+  available below the scrollable list, with an active queue toggle.
+- The finite upcoming selection excludes the current track. Selecting a row
+  updates the persistent audio owner; an ended preview advances to the next item
+  and the final preview stops. Next is disabled at the end. History is populated
+  by actual audio playing events, not by merely selecting or seeking a track.
+  History rows can be played and the history can be cleared independently.
+- The source link moves into the shadcn/Base UI track-actions popover alongside
+  the existing favorite control. Unsupported service controls were not added.
+  Escape hides the queue first and restores its trigger; a removed focused row
+  returns focus to the heading. Natural playback advancement does not steal focus
+  from other surviving controls. Closed presence content is inert.
+- The player source keeps square artwork geometry. Per the user's correction,
+  its previous dark gradient and fading cover are restored. The queue has stronger
+  top dimming because text occupies that area. The dismissal chevron accurately
+  presents the existing click action. Gesture dismissal is still unimplemented.
+- Slow motion review exposed a wrong text curve on entry into the queue header.
+  Reusing the native preview-return arc for that direction corrected it. Six
+  desktop/mobile open/close/reversal probes collected 296 frames: no text-range
+  bounds intersected the cover or clipped the surface, and transport/action icons
+  retained their aspect ratio. Full-width heading boxes had false-positive clipping;
+  the refined probe measures text ranges instead. This is geometric evidence, not
+  a general pixel-ink or native-animation parity claim.
+
+Validation: clean lint/build; 36 applied queue checks and five Default regression
+checks pass. Five queue viewport audits (1440×900, 1280×720, 685×572, 390×844,
+320×568) and the three Default states reported zero axe violations. Checked real
+audio advancement/stopping, source popover, keyboard/escape/focus, no fabricated
+history, reduced motion, persistent shared nodes/audio and horizontal reflow.
+Short viewports retain vertical scrolling; this remains a portrait composition
+on desktop. Local recordings, a 10%-speed review and frame probes are in
+`output/playwright/`. Cross-browser rendering and native gestures remain unverified.
+
+The queue demonstrates another presentation within one track owner. Direct React
+state, CSS and Motion still handle its coordination. It does not supply evidence
+for extracting a Continuity public API or packaging a component library.

@@ -158,3 +158,22 @@ The next Continuity validation remains preserving track, playback, seek and focu
 through a meaningful presentation change. Visual refinement still does not justify
 a public API; a later independent-owner or portal case must expose actual repeated
 coordination before extraction.
+
+### Integrated queue reference — 2026-10-06
+
+The user's five screenshots establish the requested composition: complete square
+artwork, a small current-track header in queue/history views, artwork alongside
+song rows, and playback controls below the list. Apple's [queue guide](https://support.apple.com/en-euro/guide/iphone/ipha4521ef7d/ios)
+and [iPhone/iPad/Android queue support](https://support.apple.com/en-gb/109336)
+confirm queue visibility, selecting upcoming songs and playback history. The
+official Now Playing queue screenshot was also inspected. These references do not
+establish native animation timing or exact parity across platform versions.
+
+The applied study now uses that hierarchy inside the persistent player rather
+than a floating list. The user explicitly preferred the previous dark gradient;
+it and the cover fade are retained, while the artwork source keeps square geometry.
+Only supported controls are shown. Upcoming items follow the finite sample order,
+and session history comes from actual audio playing events. Lyrics, casting,
+recommendation AutoPlay, shuffle, repeat and editable queue order remain outside
+this pass. Reusing the same three nodes in the queue header is useful visual
+evidence, but the single-owner implementation still does not justify extraction.

@@ -53,8 +53,14 @@ Read `docs/research.md` before proposing a competing abstraction.
   Unnamed position projection corrects their scaling; do not put the three shared
   parts inside presence. The compact surface supplies one keyboard focus ring.
 - Apple progress/volume bars have no visible thumb; preserve Base UI's native
-  input, 44px control and track focus ring. Keep the backdrop artwork-derived
-  and the external source link in the queue; do not add unsupported Apple controls.
+  input, 44px control and track focus ring. Keep the artwork-derived dark gradient
+  and fading square artwork in player, as requested. The integrated queue is a
+  player panel, not a fourth presentation state: the three shared nodes form its
+  small current-track header. The source link lives in the Base UI actions popover.
+- Upcoming rows exclude the current track. Playback advances through the finite
+  catalog selection and stops at its end. History records actual playing events,
+  not merely selections or seeks. Preserve the track owner, audio element, seek,
+  volume, favorites and focus across queue changes. Escape closes the queue first.
 - Run `pnpm lint` and `pnpm build`. Also inspect live interruption, keyboard/focus,
   narrow layouts, resizing and reduced motion; compilation is not visual validation.
 - Local browser captures/scripts go in ignored `output/playwright/`. Keep evidence
