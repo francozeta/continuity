@@ -29,6 +29,7 @@ import {
   Volume1,
   Volume2,
   ListMusic,
+  MoreHorizontal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
@@ -113,12 +114,14 @@ function MiniPlayerControls({
   onPlay,
   onNext,
   reduce,
+  nextDisabled,
   ref,
 }: {
   playing: boolean;
   onPlay: () => void;
   onNext: () => void;
   reduce: boolean;
+  nextDisabled: boolean;
   ref?: Ref<HTMLDivElement>;
 }) {
   const present = useIsPresent();
@@ -139,6 +142,7 @@ function MiniPlayerControls({
         className="icon-button"
         aria-label="Next track"
         onClick={onNext}
+        disabled={nextDisabled}
       >
         <FastForward
           className="size-5"
@@ -147,6 +151,98 @@ function MiniPlayerControls({
           aria-hidden="true"
         />
       </Button>
+    </motion.div>
+  );
+}
+
+function QueuePanel({
+  trackIndex,
+  history,
+  onSelect,
+  onClearHistory,
+  headingRef,
+  reduce,
+}: {
+  trackIndex: number;
+  history: { key: number; index: number }[];
+  onSelect: (index: number) => void;
+  onClearHistory: () => void;
+  headingRef: Ref<HTMLHeadingElement>;
+  reduce: boolean;
+}) {
+  const present = useIsPresent();
+  const upcoming = appleMusicTracks.slice(trackIndex + 1);
+  const row = (index: number, key: number) => {
+    const item = appleMusicTracks[index];
+    return (
+      <li key={key}>
+        <Button
+          variant="ghost"
+          className="queue-track"
+          onClick={() => onSelect(index)}
+        >
+          <Image
+            src={item.artwork}
+            alt=""
+            width={44}
+            height={44}
+            sizes="44px"
+            draggable={false}
+          />
+          <span>
+            <span className="queue-track-title">{item.title}</span>
+            <small>{item.artist}</small>
+          </span>
+        </Button>
+      </li>
+    );
+  };
+  return (
+    <motion.div
+      className="music-queue"
+      id="music-queue"
+      role="region"
+      aria-labelledby="queue-heading"
+      inert={!present}
+      initial={{ opacity: 0, filter: reduce ? "blur(0px)" : "blur(4px)" }}
+      animate={{ opacity: 1, filter: "blur(0px)" }}
+      exit={{ opacity: 0, filter: reduce ? "blur(0px)" : "blur(4px)" }}
+      transition={{ duration: reduce ? 0 : 0.14 }}
+    >
+      <div className="queue-section-heading">
+        <h3 id="queue-heading" ref={headingRef} tabIndex={-1}>
+          Playing next
+        </h3>
+        <span>
+          {upcoming.length} {upcoming.length === 1 ? "song" : "songs"}
+        </span>
+      </div>
+      {upcoming.length ? (
+        <ul aria-label="Upcoming songs">
+          {upcoming.map((item, offset) =>
+            row(trackIndex + offset + 1, item.id),
+          )}
+        </ul>
+      ) : (
+        <p className="queue-empty">You’re at the end of this selection.</p>
+      )}
+      {history.length > 0 && (
+        <>
+          <div className="queue-section-heading queue-history-heading">
+            <h3>History</h3>
+            <Button
+              variant="ghost"
+              className="clear-history"
+              onClick={onClearHistory}
+            >
+              Clear
+            </Button>
+          </div>
+          <ul aria-label="Previously played songs">
+            {history.map((entry) => row(entry.index, entry.key))}
+          </ul>
+        </>
+      )}
     </motion.div>
   );
 }
@@ -163,6 +259,12 @@ export function TrackExperiment() {
   const [previewDuration, setPreviewDuration] = useState(30);
   const [audioError, setAudioError] = useState("");
   const [queueOpen, setQueueOpen] = useState(false);
+  const [history, setHistory] = useState<{ key: number; index: number }[]>([]);
+  const historyKey = useRef(0);
+  const playedTrack = useRef<number | null>(null);
+  const queueTriggerRef = useRef<HTMLButtonElement>(null);
+  const queueHeadingRef = useRef<HTMLHeadingElement>(null);
+  const pendingQueueFocus = useRef<"heading" | "trigger" | null>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
   const isApple = appearance === "apple";
   const track = appleMusicTracks[trackIndex];
@@ -199,12 +301,42 @@ export function TrackExperiment() {
   }
 
   function selectTrack(index: number) {
-    if (index === trackIndex) return;
-    setTrackIndex((index + appleMusicTracks.length) % appleMusicTracks.length);
+    const next = Math.max(0, Math.min(index, appleMusicTracks.length - 1));
+    if (next === trackIndex) return;
+    if (playedTrack.current === track.id) {
+      const entry = { key: ++historyKey.current, index: trackIndex };
+      setHistory((current) => [entry, ...current].slice(0, 12));
+    }
+    playedTrack.current = null;
+    // Only restore focus when selection removes its focused row/control.
+    // Natural playback advancement should not take focus from another control.
+    if (
+      queueOpen &&
+      (document.activeElement?.closest(".queue-track") ||
+        (next === appleMusicTracks.length - 1 &&
+          document.activeElement?.getAttribute("aria-label") === "Next track"))
+    )
+      pendingQueueFocus.current = "heading";
+    setTrackIndex(next);
     setPosition(0);
     setPreviewDuration(30);
     setAudioError("");
   }
+
+  function toggleQueue(open: boolean) {
+    pendingQueueFocus.current = open ? "heading" : "trigger";
+    setQueueOpen(open);
+  }
+
+  useLayoutEffect(() => {
+    if (!pendingQueueFocus.current) return;
+    const target =
+      pendingQueueFocus.current === "heading"
+        ? queueHeadingRef.current
+        : queueTriggerRef.current;
+    target?.focus({ preventScroll: true });
+    pendingQueueFocus.current = null;
+  }, [queueOpen, trackIndex]);
 
   function toggleFavorite() {
     if (!isApple) {
@@ -233,6 +365,8 @@ export function TrackExperiment() {
   const pendingFocus = useRef<"open" | "back" | "expand" | null>(null);
 
   function changeState(next: TrackState) {
+    pendingQueueFocus.current = null;
+    setQueueOpen(false);
     pendingFocus.current =
       next === "compact" ? "open" : state === "player" ? "expand" : "back";
     setState(next);
@@ -297,6 +431,7 @@ export function TrackExperiment() {
             className="track-surface"
             data-state={state}
             data-appearance={appearance}
+            data-panel={isApple && queueOpen ? "queue" : "artwork"}
             style={{
               borderRadius:
                 state === "compact" ? 22 : state === "preview" ? 28 : 34,
@@ -310,6 +445,10 @@ export function TrackExperiment() {
                 !event.defaultPrevented
               ) {
                 event.preventDefault();
+                if (queueOpen) {
+                  toggleQueue(false);
+                  return;
+                }
                 changeState(state === "player" ? "preview" : "compact");
               }
             }}
@@ -354,15 +493,19 @@ export function TrackExperiment() {
                   ...transition,
                   path: prefersReducedMotion
                     ? undefined
-                    : state === "player"
+                    : isApple && queueOpen
                       ? isNarrow
-                        ? toNarrowPlayer
-                        : toPlayer
-                      : state === "preview"
+                        ? toNarrowPreview
+                        : toPreview
+                      : state === "player"
                         ? isNarrow
-                          ? toNarrowPreview
-                          : toPreview
-                        : undefined,
+                          ? toNarrowPlayer
+                          : toPlayer
+                        : state === "preview"
+                          ? isNarrow
+                            ? toNarrowPreview
+                            : toPreview
+                          : undefined,
                 },
               }}
             >
@@ -406,6 +549,7 @@ export function TrackExperiment() {
                   playing={isPlaying}
                   onPlay={() => setIsPlaying(!isPlaying)}
                   onNext={() => selectTrack(trackIndex + 1)}
+                  nextDisabled={trackIndex === appleMusicTracks.length - 1}
                   reduce={prefersReducedMotion}
                 />
               )}
@@ -460,22 +604,73 @@ export function TrackExperiment() {
                   </motion.div>
                 )}
                 {isApple && state === "player" && (
-                  <MotionButton
-                    variant="ghost"
-                    layout="position"
-                    className="apple-favorite icon-button"
-                    aria-label={favorite ? "Remove from favorites" : "Favorite"}
-                    aria-pressed={favorite}
-                    onClick={toggleFavorite}
-                  >
-                    <Star
-                      className="size-5"
-                      fill={favorite ? "currentColor" : "none"}
-                      strokeWidth={1.5}
-                      aria-hidden="true"
-                    />
-                  </MotionButton>
+                  <motion.div layout="position" className="apple-track-actions">
+                    <MotionButton
+                      variant="ghost"
+                      layout="position"
+                      className="apple-favorite icon-button"
+                      aria-label={
+                        favorite ? "Remove from favorites" : "Favorite"
+                      }
+                      aria-pressed={favorite}
+                      onClick={toggleFavorite}
+                    >
+                      <Star
+                        className="size-5"
+                        fill={favorite ? "currentColor" : "none"}
+                        strokeWidth={1.5}
+                        aria-hidden="true"
+                      />
+                    </MotionButton>
+                    <Popover>
+                      <PopoverTrigger
+                        render={
+                          <Button
+                            variant="ghost"
+                            className="icon-button track-more"
+                            aria-label="More track actions"
+                          />
+                        }
+                      >
+                        <MoreHorizontal className="size-5" aria-hidden="true" />
+                      </PopoverTrigger>
+                      <PopoverContent
+                        side="bottom"
+                        align="end"
+                        className="track-actions-menu"
+                      >
+                        <PopoverTitle className="sr-only">
+                          Track actions
+                        </PopoverTitle>
+                        <a
+                          className="music-source"
+                          href={track.url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          Listen on Apple Music
+                          <ArrowUpRight className="size-4" aria-hidden="true" />
+                        </a>
+                      </PopoverContent>
+                    </Popover>
+                  </motion.div>
                 )}
+                <AnimatePresence initial={false} mode="popLayout">
+                  {isApple && state === "player" && queueOpen && (
+                    <QueuePanel
+                      key="queue"
+                      trackIndex={trackIndex}
+                      history={history}
+                      onSelect={selectTrack}
+                      onClearHistory={() => {
+                        setHistory([]);
+                        queueHeadingRef.current?.focus({ preventScroll: true });
+                      }}
+                      headingRef={queueHeadingRef}
+                      reduce={prefersReducedMotion}
+                    />
+                  )}
+                </AnimatePresence>
                 {state === "player" && (
                   <motion.div
                     layout="position"
@@ -555,7 +750,9 @@ export function TrackExperiment() {
                       className="icon-button previous-button"
                       aria-label="Previous track"
                       onClick={() =>
-                        position > 10 ? seek(0) : selectTrack(trackIndex - 1)
+                        position > 10 || trackIndex === 0
+                          ? seek(0)
+                          : selectTrack(trackIndex - 1)
                       }
                     >
                       <Rewind
@@ -578,6 +775,9 @@ export function TrackExperiment() {
                     className="icon-button restart-button"
                     type="button"
                     aria-label={isApple ? "Next track" : "Reset progress"}
+                    disabled={
+                      isApple && trackIndex === appleMusicTracks.length - 1
+                    }
                     onClick={() =>
                       isApple ? selectTrack(trackIndex + 1) : seek(0)
                     }
@@ -627,57 +827,18 @@ export function TrackExperiment() {
                       <p className="preview-disclosure">
                         30-second audio preview
                       </p>
-                      <Popover open={queueOpen} onOpenChange={setQueueOpen}>
-                        <PopoverTrigger
-                          render={
-                            <Button
-                              variant="ghost"
-                              className="icon-button"
-                              aria-label="Playing next"
-                            />
-                          }
-                        >
-                          <ListMusic className="size-5" aria-hidden="true" />
-                        </PopoverTrigger>
-                        <PopoverContent
-                          side="top"
-                          align="end"
-                          className="music-queue"
-                        >
-                          <PopoverTitle>Playing next</PopoverTitle>
-                          {appleMusicTracks.map((item, index) => (
-                            <Button
-                              key={item.id}
-                              variant="ghost"
-                              className="queue-track"
-                              aria-current={
-                                index === trackIndex ? "true" : undefined
-                              }
-                              onClick={() => selectTrack(index)}
-                            >
-                              <span>
-                                {item.title}
-                                <small>{item.artist}</small>
-                              </span>
-                              {index === trackIndex && (
-                                <span className="queue-current">Current</span>
-                              )}
-                            </Button>
-                          ))}
-                          <a
-                            className="music-source"
-                            href={track.url}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            Listen on Apple Music
-                            <ArrowUpRight
-                              className="size-3"
-                              aria-hidden="true"
-                            />
-                          </a>
-                        </PopoverContent>
-                      </Popover>
+                      <Button
+                        variant="ghost"
+                        className="icon-button queue-toggle"
+                        ref={queueTriggerRef}
+                        aria-label="Playing next"
+                        aria-expanded={queueOpen}
+                        aria-controls="music-queue"
+                        aria-pressed={queueOpen}
+                        onClick={() => toggleQueue(!queueOpen)}
+                      >
+                        <ListMusic className="size-5" aria-hidden="true" />
+                      </Button>
                     </div>
                   </motion.div>
                 )}
@@ -701,6 +862,9 @@ export function TrackExperiment() {
           ref={audioRef}
           src={track.preview}
           preload="none"
+          onPlaying={() => {
+            playedTrack.current = track.id;
+          }}
           onLoadedMetadata={(event) => {
             const audio = event.currentTarget;
             if (Number.isFinite(audio.duration)) {
@@ -713,7 +877,11 @@ export function TrackExperiment() {
             if (isApple && Number.isFinite(audio.duration))
               setPosition((audio.currentTime / audio.duration) * 100);
           }}
-          onEnded={() => setIsPlaying(false)}
+          onEnded={() => {
+            if (isApple && trackIndex < appleMusicTracks.length - 1)
+              selectTrack(trackIndex + 1);
+            else setIsPlaying(false);
+          }}
           onError={() => {
             if (isApple) {
               setIsPlaying(false);
