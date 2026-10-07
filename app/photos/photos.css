@@ -244,6 +244,7 @@ html:has(.photos-viewer) {
   gap: 4px;
 }
 .photos-viewer-layout {
+  position: relative;
   display: grid;
   min-height: 0;
   grid-template-columns: minmax(0, 1fr);
@@ -284,6 +285,13 @@ html:has(.photos-viewer) {
   overscroll-behavior: contain;
   background: #202022;
   scrollbar-width: thin;
+}
+.photos-details[data-exiting="true"] {
+  position: absolute;
+  top: 8px;
+  right: 24px;
+  bottom: 8px;
+  width: 288px;
 }
 .photos-details h3 {
   margin: 0 0 24px;
@@ -380,6 +388,8 @@ html:has(.photos-viewer) {
 @media (max-width: 640px) {
   .photos-navigation {
     padding: 8px 20px;
+    flex-wrap: wrap;
+    gap: 4px 24px;
   }
   .photos-app main {
     padding: 28px 20px;
@@ -435,6 +445,14 @@ html:has(.photos-viewer) {
   .photos-details {
     border-radius: 16px 16px 0 0;
     padding: 20px;
+  }
+  .photos-details[data-exiting="true"] {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 42%;
+    min-height: 160px;
   }
   .photos-details h3 {
     margin-bottom: 20px;

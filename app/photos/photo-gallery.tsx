@@ -94,10 +94,10 @@ function PhotoImage({
         fill
         sizes={
           thumbnail
-            ? "(max-width: 640px) 50vw, (max-width: 1100px) 33vw, 420px"
-            : "100vw"
+            ? "(max-width: 640px) calc((100vw - 52px) / 2), (max-width: 1100px) calc((100vw - 120px) / 2), (max-width: 1440px) calc((100vw - 144px) / 3), 432px"
+            : `(max-width: 640px) 100vw, min(calc(100vw - 48px), calc((100vh - 184px) * ${photo.width / photo.height}))`
         }
-        loading="eager"
+        loading={thumbnail ? "lazy" : "eager"}
         draggable={false}
         className={zoomed ? "photos-zoomed" : undefined}
       />
@@ -125,6 +125,7 @@ function PhotoDetails({
       className="photos-details"
       aria-labelledby="photo-details-heading"
       inert={!present}
+      data-exiting={!present}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
@@ -218,6 +219,8 @@ function PhotoViewer({
     <>
       <Dialog.Backdrop
         className="photos-backdrop"
+        inert={!present}
+        style={{ pointerEvents: present ? undefined : "none" }}
         render={
           <motion.div
             initial={{ opacity: 0 }}
@@ -227,7 +230,11 @@ function PhotoViewer({
           />
         }
       />
-      <Dialog.Viewport className="photos-viewport">
+      <Dialog.Viewport
+        className="photos-viewport"
+        inert={!present}
+        style={{ pointerEvents: present ? undefined : "none" }}
+      >
         <MotionPopup
           className="photos-viewer"
           layoutRoot
@@ -435,6 +442,7 @@ export function PhotoGallery() {
               <Link href="/photos" aria-current="page">
                 Photos
               </Link>
+              <Link href="/examples">Examples</Link>
             </div>
           </nav>
           <main id="photos-library">
