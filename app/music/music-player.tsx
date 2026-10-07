@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { Dialog } from "@base-ui/react/dialog";
+import { Drawer } from "@base-ui/react/drawer";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -20,6 +20,7 @@ import {
 import {
   ArrowUpRight,
   ChevronDown,
+  ChevronLeft,
   FastForward,
   ListMusic,
   MoreHorizontal,
@@ -38,9 +39,10 @@ import {
   PopoverTitle,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { findTrack, useMusicSession, useMusicTiming } from "./music-provider";
+import { useMusicSession, useMusicTiming } from "./music-provider";
+import { MusicQueue } from "./music-queue";
 
-const MotionPopup = motion.create(Dialog.Popup);
+const MotionPopup = motion.create(Drawer.Popup);
 const textPath = arc({ strength: 0.9, direction: "cw" });
 const reducePreference = {
   subscribe(callback: () => void) {
@@ -83,6 +85,39 @@ function PlaybackButton({ compact = false }: { compact?: boolean }) {
   );
 }
 
+function NextTrackButton({ compact = false }: { compact?: boolean }) {
+  const { session, next } = useMusicSession();
+  const nextRef = useRef<HTMLButtonElement>(null);
+  const disabled = session.queue.length === 0;
+  useLayoutEffect(() => {
+    // Base UI keeps a newly disabled button focusable until we can return focus
+    // to Play. Only repair this control; media advancement must not steal focus.
+    if (disabled && document.activeElement === nextRef.current)
+      nextRef.current?.parentElement
+        ?.querySelector<HTMLButtonElement>(".play-button")
+        ?.focus({ preventScroll: true });
+  }, [disabled]);
+  return (
+    <Button
+      ref={nextRef}
+      variant="ghost"
+      className="icon-button"
+      aria-label="Next track"
+      onClick={next}
+      disabled={disabled}
+      focusableWhenDisabled
+      tabIndex={disabled ? -1 : 0}
+    >
+      <FastForward
+        className={compact ? "size-5" : "size-7"}
+        fill="currentColor"
+        strokeWidth={0}
+        aria-hidden="true"
+      />
+    </Button>
+  );
+}
+
 function CurrentParts({
   compact = false,
   reduce,
@@ -105,7 +140,7 @@ function CurrentParts({
           alt=""
           width={700}
           height={700}
-          sizes={compact ? "48px" : "(max-width: 640px) 100vw, 440px"}
+          sizes={compact ? "48px" : "(max-width: 760px) 100vw, 460px"}
           loading="eager"
           draggable={false}
         />
@@ -120,9 +155,9 @@ function CurrentParts({
           {compact ? (
             <motion.p layout="position">{track.title}</motion.p>
           ) : (
-            <Dialog.Title render={<motion.h2 layout="position" />}>
+            <Drawer.Title render={<motion.h2 layout="position" />}>
               {track.title}
-            </Dialog.Title>
+            </Drawer.Title>
           )}
         </motion.div>
         <motion.div
@@ -131,7 +166,12 @@ function CurrentParts({
           layout
           transition={{ layout: { path: reduce ? undefined : textPath } }}
         >
-          <motion.p layout="position">{track.artist}</motion.p>
+          <motion.p layout="position">
+            {track.artist}
+            {!compact && (
+              <span className="music-current-album"> — {track.album}</span>
+            )}
+          </motion.p>
         </motion.div>
       </div>
     </>
@@ -145,7 +185,7 @@ function MiniPlayer({
   reduce: boolean;
   openRef: React.RefObject<HTMLButtonElement | null>;
 }) {
-  const { track, session, next } = useMusicSession();
+  const { track } = useMusicSession();
   return (
     <section
       className="track-surface music-mini"
@@ -155,27 +195,14 @@ function MiniPlayer({
       aria-label="MiniPlayer"
     >
       <CurrentParts compact reduce={reduce} />
-      <Dialog.Trigger
+      <Drawer.Trigger
         ref={openRef}
         render={<Button variant="ghost" className="track-open" />}
         aria-label={`Open player for ${track.title}`}
       />
       <div className="compact-controls">
         <PlaybackButton compact />
-        <Button
-          variant="ghost"
-          className="icon-button"
-          aria-label="Next track"
-          onClick={next}
-          disabled={!session.queue.length}
-        >
-          <FastForward
-            className="size-5"
-            fill="currentColor"
-            strokeWidth={0}
-            aria-hidden="true"
-          />
-        </Button>
+        <NextTrackButton compact />
       </div>
     </section>
   );
@@ -184,7 +211,7 @@ function MiniPlayer({
 function PlayerTimeline() {
   const { elapsed, duration, seek } = useMusicTiming();
   return (
-    <div className="track-timeline">
+    <div className="track-timeline" data-base-ui-swipe-ignore>
       <Slider
         min={0}
         max={100}
@@ -210,7 +237,7 @@ function PlayerTimeline() {
 function PlayerVolume() {
   const { volume, setVolume } = useMusicTiming();
   return (
-    <div className="volume-row">
+    <div className="volume-row" data-base-ui-swipe-ignore>
       <Volume1 className="size-4" aria-hidden="true" />
       <Slider
         min={0}
@@ -232,7 +259,7 @@ function PlayerActions() {
   const { track, session, dispatch } = useMusicSession();
   const favorite = session.favorites.includes(track.id);
   return (
-    <div className="apple-track-actions">
+    <div className="apple-track-actions" data-base-ui-swipe-ignore>
       <Button
         variant="ghost"
         className="icon-button apple-favorite"
@@ -276,108 +303,6 @@ function PlayerActions() {
   );
 }
 
-function PlayingNext({
-  headingRef,
-}: {
-  headingRef: React.RefObject<HTMLHeadingElement | null>;
-}) {
-  const { session, playQueued, playTrack, dispatch } = useMusicSession();
-  return (
-    <div
-      className="music-queue"
-      role="region"
-      aria-labelledby="reference-queue-heading"
-    >
-      <div className="queue-section-heading">
-        <h3 id="reference-queue-heading" ref={headingRef} tabIndex={-1}>
-          Playing next
-        </h3>
-        <span>
-          {session.queue.length} {session.queue.length === 1 ? "song" : "songs"}
-        </span>
-      </div>
-      {session.queue.length ? (
-        <ul aria-label="Upcoming songs">
-          {session.queue.map((entry) => {
-            const track = findTrack(entry.trackId);
-            return (
-              <li key={entry.key}>
-                <Button
-                  variant="ghost"
-                  className="queue-track"
-                  onClick={() => {
-                    playQueued(entry.key);
-                    headingRef.current?.focus({ preventScroll: true });
-                  }}
-                >
-                  <Image
-                    src={track.artwork}
-                    alt=""
-                    width={44}
-                    height={44}
-                    sizes="44px"
-                  />
-                  <span>
-                    <span className="queue-track-title">{track.title}</span>
-                    <small>{track.artist}</small>
-                  </span>
-                </Button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <p className="queue-empty">
-          Nothing queued. Add a song from your library.
-        </p>
-      )}
-      {session.history.length > 0 && (
-        <>
-          <div className="queue-section-heading queue-history-heading">
-            <h3>History</h3>
-            <Button
-              variant="ghost"
-              className="clear-history"
-              onClick={() => {
-                dispatch({ type: "clear-history" });
-                headingRef.current?.focus({ preventScroll: true });
-              }}
-            >
-              Clear
-            </Button>
-          </div>
-          <ul aria-label="Previously played songs">
-            {session.history.map((entry) => {
-              const track = findTrack(entry.trackId);
-              return (
-                <li key={entry.key}>
-                  <Button
-                    variant="ghost"
-                    className="queue-track"
-                    onClick={() => playTrack(track.id)}
-                  >
-                    <Image
-                      src={track.artwork}
-                      alt=""
-                      width={44}
-                      height={44}
-                      sizes="44px"
-                    />
-                    <span>
-                      <span className="queue-track-title">{track.title}</span>
-                      <small>{track.artist}</small>
-                    </span>
-                  </Button>
-                </li>
-              );
-            })}
-          </ul>
-        </>
-      )}
-    </div>
-  );
-}
-
 function FullPlayer({
   reduce,
   queueOpen,
@@ -396,10 +321,10 @@ function FullPlayer({
   headingRef: React.RefObject<HTMLHeadingElement | null>;
 }) {
   const present = useIsPresent();
-  const { track, session, next, previous, error } = useMusicSession();
+  const { track, previous, error } = useMusicSession();
   return (
     <>
-      <Dialog.Backdrop
+      <Drawer.Backdrop
         render={
           <motion.div
             initial={{ opacity: 0 }}
@@ -410,7 +335,7 @@ function FullPlayer({
         }
         className="music-player-backdrop"
       />
-      <Dialog.Viewport className="music-player-viewport">
+      <Drawer.Viewport className="music-player-viewport">
         <MotionPopup
           className="music-now-playing"
           data-appearance="apple"
@@ -424,10 +349,10 @@ function FullPlayer({
           finalFocus={openRef}
           inert={!present}
         >
-          <Dialog.Description className="sr-only">
+          <Drawer.Description className="sr-only">
             Public catalog audio preview. Playback continues when this player
             closes.
-          </Dialog.Description>
+          </Drawer.Description>
           <div className="track-backdrop" aria-hidden="true">
             <Image
               src={track.artwork}
@@ -437,7 +362,7 @@ function FullPlayer({
               draggable={false}
             />
           </div>
-          <Dialog.Close
+          <Drawer.Close
             ref={closeRef}
             render={
               <Button
@@ -447,22 +372,30 @@ function FullPlayer({
             }
             aria-label="Close player"
           >
-            <ChevronDown className="size-5" aria-hidden="true" />
-          </Dialog.Close>
-          <motion.section
+            <ChevronDown
+              className="size-5 music-close-mobile"
+              aria-hidden="true"
+            />
+            <ChevronLeft
+              className="size-5 music-close-desktop"
+              aria-hidden="true"
+            />
+          </Drawer.Close>
+          <Drawer.Content
+            render={<motion.section layout style={{ borderRadius: 0 }} />}
             className="track-surface music-full-player"
             data-state="player"
             data-appearance="apple"
             data-panel={queueOpen ? "queue" : "artwork"}
-            layout
-            style={{ borderRadius: 0 }}
             aria-label="Playback controls"
           >
             <CurrentParts reduce={reduce} />
             <PlayerActions />
-            {queueOpen && <PlayingNext headingRef={headingRef} />}
+            {queueOpen && (
+              <MusicQueue headingRef={headingRef} reduce={reduce} />
+            )}
             <PlayerTimeline />
-            <div className="track-controls">
+            <div className="track-controls" data-base-ui-swipe-ignore>
               <Button
                 variant="ghost"
                 className="icon-button"
@@ -477,24 +410,11 @@ function FullPlayer({
                 />
               </Button>
               <PlaybackButton />
-              <Button
-                variant="ghost"
-                className="icon-button"
-                aria-label="Next track"
-                onClick={next}
-                disabled={!session.queue.length}
-              >
-                <FastForward
-                  className="size-7"
-                  fill="currentColor"
-                  strokeWidth={0}
-                  aria-hidden="true"
-                />
-              </Button>
+              <NextTrackButton />
             </div>
             <div className="apple-extras">
               <PlayerVolume />
-              <div className="apple-footer">
+              <div className="apple-footer" data-base-ui-swipe-ignore>
                 <p className="preview-disclosure">Audio preview</p>
                 <Button
                   ref={queueRef}
@@ -515,14 +435,15 @@ function FullPlayer({
                 {error}
               </p>
             </div>
-          </motion.section>
+          </Drawer.Content>
         </MotionPopup>
-      </Dialog.Viewport>
+      </Drawer.Viewport>
     </>
   );
 }
 
 export function MusicPlayer() {
+  const { error } = useMusicSession();
   const [open, setOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
   const reduce = useSyncExternalStore(
@@ -536,7 +457,7 @@ export function MusicPlayer() {
   const queueRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const pendingFocus = useRef<"queue" | "heading" | null>(null);
-  const actionsRef = useRef<Dialog.Root.Actions>(null);
+  const actionsRef = useRef<Drawer.Root.Actions>(null);
   function toggleQueue(next: boolean) {
     pendingFocus.current = next ? "heading" : "queue";
     setQueueOpen(next);
@@ -554,10 +475,17 @@ export function MusicPlayer() {
   return (
     <MotionConfig transition={{ layout: transition }}>
       <LayoutGroup id={`music-${namespace}`}>
-        <Dialog.Root
+        <Drawer.Root
           open={open}
           actionsRef={actionsRef}
           onOpenChange={(next, details) => {
+            if (
+              details.reason === "swipe" &&
+              !window.matchMedia("(max-width: 760px)").matches
+            ) {
+              details.cancel();
+              return;
+            }
             if (!next && details.reason === "escape-key" && queueOpen) {
               details.cancel();
               toggleQueue(false);
@@ -570,8 +498,14 @@ export function MusicPlayer() {
         >
           <div className="music-mini-dock">
             <MiniPlayer reduce={reduce} openRef={openRef} />
+            <p
+              className={error && !open ? "music-mini-error" : "sr-only"}
+              role="status"
+            >
+              {!open ? error : ""}
+            </p>
           </div>
-          <Dialog.Portal>
+          <Drawer.Portal>
             <AnimatePresence
               initial={false}
               onExitComplete={() => {
@@ -591,8 +525,8 @@ export function MusicPlayer() {
                 />
               )}
             </AnimatePresence>
-          </Dialog.Portal>
-        </Dialog.Root>
+          </Drawer.Portal>
+        </Drawer.Root>
       </LayoutGroup>
     </MotionConfig>
   );
