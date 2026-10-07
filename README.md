@@ -148,5 +148,6 @@ vercel link --project continuity --scope franco-zetas-projects
 vercel deploy --prod --scope franco-zetas-projects
 ```
 
-Deployments currently run through the CLI. `.vercelignore` excludes local build
-output, browser captures and environment files from uploads.
+The linked Vercel Git integration builds pull-request previews; the CLI commands
+above remain available for manual production deployments. `.vercelignore` excludes
+local build output, browser captures and environment files from uploads.
