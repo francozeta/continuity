@@ -1,25 +1,8 @@
 "use client";
 
 import { LayoutGroup, MotionConfig } from "motion/react";
-import {
-  useCallback,
-  useId,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type ReactNode,
-} from "react";
-
-const reducePreference = {
-  subscribe(callback: () => void) {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    query.addEventListener("change", callback);
-    return () => query.removeEventListener("change", callback);
-  },
-  getSnapshot: () =>
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  getServerSnapshot: () => true,
-};
+import { useCallback, useId, useRef, useState, type ReactNode } from "react";
+import { useReducedMotionPreference } from "@/lib/use-reduced-motion";
 
 export type ContinuityPartId = (
   entityId: string | number,
@@ -45,11 +28,7 @@ export function useContinuity({
   const latestOpen = useRef(false);
   const actionsRef = useRef<SurfaceActions>(null);
   const scope = useId();
-  const reducedMotion = useSyncExternalStore(
-    reducePreference.subscribe,
-    reducePreference.getSnapshot,
-    reducePreference.getServerSnapshot,
-  );
+  const reducedMotion = useReducedMotionPreference();
   const onOpenChange = useCallback((next: boolean, details: ChangeDetails) => {
     if (!next) details.preventUnmountOnClose();
     latestOpen.current = next;

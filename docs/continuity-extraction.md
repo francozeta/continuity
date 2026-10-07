@@ -75,7 +75,7 @@ labels and semantic primitives. The hook does not manufacture accessibility.
 ## Comparison with the direct implementation
 
 Physical source lines, including imports and whitespace, compare the direct
-consumers at `2fcc4bb` with the extraction:
+consumers at `2fcc4bb` with the extraction snapshot at `5939e17`:
 
 | File | Direct | Extracted | Difference |
 | --- | ---: | ---: | ---: |
@@ -110,6 +110,17 @@ Axe reported zero violations for the library, open details/viewer and empty
 Favorites. This supplements visual inspection, not screen-reader speech or
 physical-device testing.
 
+The final build, including the subsequent scroll cases and Photos exit fixes,
+passed **116 Chromium checks**: 57 Music/Default, 25 Photos baseline checks,
+14 Photos interruption/selection checks, and 20 album/profile scroll checks.
+The latter preserve the actual title/action/audio nodes, focused playback control,
+saved/follow state, threshold hysteresis and fast reversal. Twelve Photos
+close/reopen cycles remained valid while exiting. Expanded/compact scroll scenes
+also had zero axe violations. The six Node session assertions were rerun.
+Browser-managed motion was sampled at 0.1 playback rate; layout frames and final
+desktop/narrow captures were visually reviewed. See `scroll-context.md` for the
+scope and remaining separate-owner experiment.
+
 ### Findings and verdict
 
 | Severity | Location | Before | After | Why |
@@ -117,6 +128,14 @@ physical-device testing.
 | MEDIUM | Photo canvas | Whole-viewport sizing could exceed the remaining space when mobile details opened. | Image uses its canvas container height and preserves aspect ratio. | Keep the full unzoomed photo visible. |
 | MEDIUM | Finite navigation | Disabling the focused last Next could leave no useful focus target. | Retain focus until it moves to the selected filmstrip item. | Preserve keyboard navigation without moving unrelated focus. |
 | MEDIUM | Exit coordination | Each direct consumer kept its own exit/unmount policy. | One handler checks the latest accepted open request before unmounting. | Keep reopening safe while an earlier exit finishes. |
+| MEDIUM | Photo portal hit testing | The exiting backdrop could intercept a click intended to reopen the gallery source. | Exiting backdrop and viewport are inert and stop receiving pointer input. | Allow reversal while the previous exit is still animating. |
+| LOW | Details exit layout | The fading panel could occupy an implicit grid row after its layout mode closed. | The exiting panel leaves grid flow while it fades. | Keep the image canvas stable during reversal. |
+
+Follow-up review corrected thumbnail `sizes` to match the actual grid and removed
+unnecessary eager thumbnail preloads. Viewer requests account for available desktop
+height. The reduced-motion preference is now a shared utility in
+`lib/use-reduced-motion.ts`, also consumed by the new scroll examples. The line
+table above records the original extraction decision, not a running savings metric.
 
 Verdict: retain this small internal extraction for the two reference clients.
 A public API still needs independent-instance/nesting coverage, Safari and physical

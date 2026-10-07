@@ -122,6 +122,13 @@ focus. Application state, styling, routing, audio and nested panels stay with
 their consumers. Read [`docs/continuity-extraction.md`](docs/continuity-extraction.md)
 for the direct-versus-extracted comparison, integration wiring and limits.
 
+**Examples** in Photos opens `/examples`, with album and profile scroll studies
+inspired by sticky product headers. Each has one header title and primary control
+that remain mounted while presentation changes. Album preview playback and saving,
+and the profile's local Follow state, survive the roundtrip. These direct CSS/Motion
+cases deliberately test where a single owner is sufficient. They do not introduce
+a global entity registry. See [`docs/scroll-context.md`](docs/scroll-context.md).
+
 In the original study, preview and player become bottom-aligned sheets at narrow sizes. They remain
 nonmodal regions, so Tab follows the document. Resize either
 expanded state without resetting the track. Reduced motion replaces spatial travel

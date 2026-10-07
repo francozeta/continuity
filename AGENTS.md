@@ -18,6 +18,11 @@ exercises gallery → viewer → details and a disappearing source. Keep extract
 limited to evidence shared by these consumers; do not add new domains or a public
 library without an explicit request.
 
+The subsequent authorized scroll cases live at `/examples`: album and profile
+hero → sticky header. Read `docs/scroll-context.md`. These have a single DOM
+header and direct sticky/layout behavior; do not force them through the modal
+controller or introduce an entity registry for this topology.
+
 ## Rules
 
 - Prefer evidence from the working interaction over speculative abstractions.
