@@ -95,6 +95,13 @@ slider styling.
 Default is a developer-facing experiment baseline, not a released component API.
 The comparison evaluates customization without inventing a Continuity runtime.
 
+**Open app** opens the reference consumer at `/music`. Library, album and search
+are independent routes over one layout-owned playback session. Its persistent
+MiniPlayer opens Now Playing directly in a full-window Base UI portal, with an
+immersive mobile composition and a wider desktop layout. Navigation and dismissal
+preserve the audio owner. The original study remains at `/`.
+Implementation stages and evidence live in [`docs/reference-client.md`](docs/reference-client.md).
+
 Preview and player become bottom-aligned sheets at narrow sizes. They remain
 nonmodal regions, so Tab follows the document. Resize either
 expanded state without resetting the track. Reduced motion replaces spatial travel

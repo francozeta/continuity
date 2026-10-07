@@ -532,3 +532,18 @@ events were dispatched for deterministic focus cases; these supplement the real
 media checks above. Screen-reader speech and additional browsers were not tested.
 Verdict: Approve for the existing experimental scope; the follow-up limitations
 above remain.
+
+## Reference consumer, stage 1 — 2026-10-06
+
+The user authorized a staged application example after the reference research.
+`/music` adds independent route owners and a Base UI body portal while preserving
+the original study at `/`. Playback state is application-owned in the persistent
+music layout. Current cover/title/artist are projected between a surviving
+MiniPlayer and the portal with direct Motion. Catalog copies do not all register
+as transition sources. See [the reference client log](reference-client.md).
+
+Thirteen production Chromium checks, lint and build passed for this stage. The
+origin catalog row was filtered out before closing; the audio element remained
+identical and playing, and focus returned to the MiniPlayer. This exercises a
+previously missing topology. It has not yet exposed repetition that would justify
+a public entity API; extraction remains evidence-driven.
