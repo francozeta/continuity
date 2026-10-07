@@ -3,21 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Dialog } from "@base-ui/react/dialog";
-import {
-  AnimatePresence,
-  LayoutGroup,
-  MotionConfig,
-  motion,
-  useIsPresent,
-} from "motion/react";
-import {
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type CSSProperties,
-} from "react";
+import { AnimatePresence, motion, useIsPresent } from "motion/react";
+import { useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowLeft,
   ArrowUpRight,
@@ -30,20 +17,14 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  ContinuityBoundary,
+  useContinuity,
+  type ContinuityPartId,
+} from "@/components/continuity/continuity";
 import { photos, photoDate, type Photo } from "./catalog";
 
 const MotionPopup = motion.create(Dialog.Popup);
-const reducePreference = {
-  subscribe(callback: () => void) {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    query.addEventListener("change", callback);
-    return () => query.removeEventListener("change", callback);
-  },
-  getSnapshot: () =>
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  getServerSnapshot: () => true,
-};
-const partId = (id: string, part: string) => JSON.stringify([id, part]);
 
 function PhotoNavigation({
   direction,
@@ -86,10 +67,12 @@ function PhotoNavigation({
 
 function PhotoImage({
   photo,
+  partId,
   thumbnail = false,
   zoomed = false,
 }: {
   photo: Photo;
+  partId: ContinuityPartId;
   thumbnail?: boolean;
   zoomed?: boolean;
 }) {
@@ -192,6 +175,7 @@ function PhotoDetails({
 
 function PhotoViewer({
   photo,
+  partId,
   collection,
   selected,
   select,
@@ -210,6 +194,7 @@ function PhotoViewer({
   reduce,
 }: {
   photo: Photo;
+  partId: ContinuityPartId;
   collection: readonly string[];
   selected: string;
   select: (id: string) => void;
@@ -224,7 +209,7 @@ function PhotoViewer({
   closeRef: React.RefObject<HTMLButtonElement | null>;
   infoRef: React.RefObject<HTMLButtonElement | null>;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
-  finalFocus: () => HTMLElement | null;
+  finalFocus: () => HTMLElement | false;
   reduce: boolean;
 }) {
   const present = useIsPresent();
@@ -319,7 +304,7 @@ function PhotoViewer({
           </header>
           <div className="photos-viewer-layout" data-details={detailsOpen}>
             <motion.div layout className="photos-canvas">
-              <PhotoImage photo={photo} zoomed={zoomed} />
+              <PhotoImage photo={photo} zoomed={zoomed} partId={partId} />
             </motion.div>
             <AnimatePresence initial={false}>
               {detailsOpen && (
@@ -378,7 +363,6 @@ function PhotoViewer({
 }
 
 export function PhotoGallery() {
-  const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState(photos[0].id);
   const [collection, setCollection] = useState<readonly string[]>(
     photos.map((photo) => photo.id),
@@ -388,26 +372,22 @@ export function PhotoGallery() {
   const [captions, setCaptions] = useState<Record<string, string>>({});
   const [zoom, setZoom] = useState<Record<string, boolean>>({});
   const [detailsOpen, setDetailsOpen] = useState(false);
-  const namespace = useId();
-  const reduce = useSyncExternalStore(
-    reducePreference.subscribe,
-    reducePreference.getSnapshot,
-    reducePreference.getServerSnapshot,
-  );
   const sources = useRef(new Map<string, HTMLButtonElement>());
   const galleryHeading = useRef<HTMLHeadingElement>(null);
+  const continuity = useContinuity({
+    returnFocus: () => sources.current.get(selected),
+    fallbackFocus: () => galleryHeading.current,
+  });
+  const { open, reducedMotion: reduce, partId } = continuity;
   const closeRef = useRef<HTMLButtonElement>(null);
   const infoRef = useRef<HTMLButtonElement>(null);
   const detailsHeading = useRef<HTMLHeadingElement>(null);
   const pendingFocus = useRef<"details" | "info" | null>(null);
-  const actionsRef = useRef<Dialog.Root.Actions>(null);
   const photo = photos.find((photo) => photo.id === selected)!;
   const visible =
     filter === "all"
       ? photos
       : photos.filter((photo) => favorites.includes(photo.id));
-  const finalFocus = () =>
-    sources.current.get(selected) ?? galleryHeading.current;
   const toggleFavorite = (id: string) =>
     setFavorites((current) =>
       current.includes(id)
@@ -426,192 +406,179 @@ export function PhotoGallery() {
     ).current?.focus({ preventScroll: true });
     pendingFocus.current = null;
   }, [detailsOpen]);
-  const transition = reduce
-    ? { type: false as const, duration: 0 }
-    : { type: "spring" as const, stiffness: 330, damping: 34, mass: 0.85 };
   return (
-    <MotionConfig transition={{ layout: transition }}>
-      <LayoutGroup id={`photos-${namespace}`}>
-        <Dialog.Root
-          open={open}
-          actionsRef={actionsRef}
-          onOpenChange={(next, details) => {
-            if (!next && details.reason === "escape-key" && detailsOpen) {
-              details.cancel();
-              toggleDetails(false);
-              return;
-            }
-            if (!next) details.preventUnmountOnClose();
-            else setDetailsOpen(false);
-            setOpen(next);
-          }}
-        >
-          <div className="photos-app">
-            <a href="#photos-library" className="photos-skip">
-              Skip to photos
-            </a>
-            <nav className="photos-navigation" aria-label="Reference examples">
-              <Link href="/">
-                <ArrowLeft className="size-4" aria-hidden="true" />
-                Continuity
+    <ContinuityBoundary controller={continuity}>
+      <Dialog.Root
+        open={open}
+        actionsRef={continuity.actionsRef}
+        onOpenChange={(next, details) => {
+          if (!next && details.reason === "escape-key" && detailsOpen) {
+            details.cancel();
+            toggleDetails(false);
+            return;
+          }
+          if (next) setDetailsOpen(false);
+          continuity.onOpenChange(next, details);
+        }}
+      >
+        <div className="photos-app">
+          <a href="#photos-library" className="photos-skip">
+            Skip to photos
+          </a>
+          <nav className="photos-navigation" aria-label="Reference examples">
+            <Link href="/">
+              <ArrowLeft className="size-4" aria-hidden="true" />
+              Continuity
+            </Link>
+            <div>
+              <Link href="/music">Music</Link>
+              <Link href="/photos" aria-current="page">
+                Photos
               </Link>
+            </div>
+          </nav>
+          <main id="photos-library">
+            <header className="photos-library-heading">
               <div>
-                <Link href="/music">Music</Link>
-                <Link href="/photos" aria-current="page">
+                <p>From orbit</p>
+                <h1 ref={galleryHeading} tabIndex={-1}>
                   Photos
-                </Link>
+                </h1>
               </div>
-            </nav>
-            <main id="photos-library">
-              <header className="photos-library-heading">
-                <div>
-                  <p>From orbit</p>
-                  <h1 ref={galleryHeading} tabIndex={-1}>
-                    Photos
-                  </h1>
-                </div>
-                <div
-                  className="photos-filters"
-                  role="group"
-                  aria-label="Photo filter"
+              <div
+                className="photos-filters"
+                role="group"
+                aria-label="Photo filter"
+              >
+                <Button
+                  variant="ghost"
+                  aria-pressed={filter === "all"}
+                  onClick={() => setFilter("all")}
                 >
-                  <Button
-                    variant="ghost"
-                    aria-pressed={filter === "all"}
-                    onClick={() => setFilter("all")}
-                  >
-                    Library
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    aria-pressed={filter === "favorites"}
-                    onClick={() => setFilter("favorites")}
-                  >
-                    Favorites
-                  </Button>
-                </div>
-              </header>
-              <p className="photos-count" role="status">
-                {visible.length} {visible.length === 1 ? "photo" : "photos"}
-              </p>
-              {visible.length ? (
-                <ul
-                  className="photos-grid"
-                  aria-label={
-                    filter === "all" ? "Photo library" : "Favorite photos"
-                  }
+                  Library
+                </Button>
+                <Button
+                  variant="ghost"
+                  aria-pressed={filter === "favorites"}
+                  onClick={() => setFilter("favorites")}
                 >
-                  {visible.map((photo) => (
-                    <li key={photo.id}>
-                      <Dialog.Trigger
-                        ref={(element: HTMLButtonElement | null) => {
-                          if (element) sources.current.set(photo.id, element);
-                          else sources.current.delete(photo.id);
-                        }}
-                        render={
-                          <Button variant="ghost" className="photos-open" />
+                  Favorites
+                </Button>
+              </div>
+            </header>
+            <p className="photos-count" role="status">
+              {visible.length} {visible.length === 1 ? "photo" : "photos"}
+            </p>
+            {visible.length ? (
+              <ul
+                className="photos-grid"
+                aria-label={
+                  filter === "all" ? "Photo library" : "Favorite photos"
+                }
+              >
+                {visible.map((photo) => (
+                  <li key={photo.id}>
+                    <Dialog.Trigger
+                      ref={(element: HTMLButtonElement | null) => {
+                        if (element) sources.current.set(photo.id, element);
+                        else sources.current.delete(photo.id);
+                      }}
+                      render={
+                        <Button variant="ghost" className="photos-open" />
+                      }
+                      aria-label={`Open ${photo.title}`}
+                      onClick={() => {
+                        setSelected(photo.id);
+                        setCollection(visible.map((item) => item.id));
+                      }}
+                    >
+                      <PhotoImage photo={photo} thumbnail partId={partId} />
+                      <div className="photos-card-caption">
+                        <motion.div layout layoutId={partId(photo.id, "title")}>
+                          <motion.span layout="position">
+                            {photo.title}
+                          </motion.span>
+                        </motion.div>
+                        <span>{photoDate(photo.date)}</span>
+                      </div>
+                    </Dialog.Trigger>
+                    <Button
+                      variant="ghost"
+                      className="photos-icon photos-card-favorite"
+                      aria-label={`${favorites.includes(photo.id) ? "Unfavorite" : "Favorite"} ${photo.title}`}
+                      aria-pressed={favorites.includes(photo.id)}
+                      onClick={() => toggleFavorite(photo.id)}
+                    >
+                      <Heart
+                        className="size-4"
+                        fill={
+                          favorites.includes(photo.id) ? "currentColor" : "none"
                         }
-                        aria-label={`Open ${photo.title}`}
-                        onClick={() => {
-                          setSelected(photo.id);
-                          setCollection(visible.map((item) => item.id));
-                        }}
-                      >
-                        <PhotoImage photo={photo} thumbnail />
-                        <div className="photos-card-caption">
-                          <motion.div
-                            layout
-                            layoutId={partId(photo.id, "title")}
-                          >
-                            <motion.span layout="position">
-                              {photo.title}
-                            </motion.span>
-                          </motion.div>
-                          <span>{photoDate(photo.date)}</span>
-                        </div>
-                      </Dialog.Trigger>
-                      <Button
-                        variant="ghost"
-                        className="photos-icon photos-card-favorite"
-                        aria-label={`${favorites.includes(photo.id) ? "Unfavorite" : "Favorite"} ${photo.title}`}
-                        aria-pressed={favorites.includes(photo.id)}
-                        onClick={() => toggleFavorite(photo.id)}
-                      >
-                        <Heart
-                          className="size-4"
-                          fill={
-                            favorites.includes(photo.id)
-                              ? "currentColor"
-                              : "none"
-                          }
-                          aria-hidden="true"
-                        />
-                      </Button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="photos-empty">
-                  Your favorites will appear here. Save a photo from your
-                  library.
-                </p>
-              )}
-              <p className="photos-credit">
-                Photography from the{" "}
-                <a
-                  href="https://images.nasa.gov/"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  NASA Image and Video Library
-                </a>
-                .
+                        aria-hidden="true"
+                      />
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="photos-empty">
+                Your favorites will appear here. Save a photo from your library.
               </p>
-            </main>
-          </div>
-          <Dialog.Portal>
-            <AnimatePresence
-              initial={false}
-              onExitComplete={() => {
-                if (!open) actionsRef.current?.unmount();
-              }}
-            >
-              {open && (
-                <PhotoViewer
-                  key="photo-viewer"
-                  photo={photo}
-                  selected={selected}
-                  collection={collection}
-                  select={setSelected}
-                  favorite={favorites.includes(selected)}
-                  toggleFavorite={() => toggleFavorite(selected)}
-                  zoomed={Boolean(zoom[selected])}
-                  toggleZoom={() =>
-                    setZoom((current) => ({
-                      ...current,
-                      [selected]: !current[selected],
-                    }))
-                  }
-                  caption={captions[selected] ?? ""}
-                  setCaption={(value) =>
-                    setCaptions((current) => ({
-                      ...current,
-                      [selected]: value,
-                    }))
-                  }
-                  detailsOpen={detailsOpen}
-                  toggleDetails={toggleDetails}
-                  closeRef={closeRef}
-                  infoRef={infoRef}
-                  headingRef={detailsHeading}
-                  finalFocus={finalFocus}
-                  reduce={reduce}
-                />
-              )}
-            </AnimatePresence>
-          </Dialog.Portal>
-        </Dialog.Root>
-      </LayoutGroup>
-    </MotionConfig>
+            )}
+            <p className="photos-credit">
+              Photography from the{" "}
+              <a
+                href="https://images.nasa.gov/"
+                target="_blank"
+                rel="noreferrer"
+              >
+                NASA Image and Video Library
+              </a>
+              .
+            </p>
+          </main>
+        </div>
+        <Dialog.Portal>
+          <AnimatePresence
+            initial={false}
+            onExitComplete={continuity.onExitComplete}
+          >
+            {open && (
+              <PhotoViewer
+                key="photo-viewer"
+                photo={photo}
+                partId={partId}
+                selected={selected}
+                collection={collection}
+                select={setSelected}
+                favorite={favorites.includes(selected)}
+                toggleFavorite={() => toggleFavorite(selected)}
+                zoomed={Boolean(zoom[selected])}
+                toggleZoom={() =>
+                  setZoom((current) => ({
+                    ...current,
+                    [selected]: !current[selected],
+                  }))
+                }
+                caption={captions[selected] ?? ""}
+                setCaption={(value) =>
+                  setCaptions((current) => ({
+                    ...current,
+                    [selected]: value,
+                  }))
+                }
+                detailsOpen={detailsOpen}
+                toggleDetails={toggleDetails}
+                closeRef={closeRef}
+                infoRef={infoRef}
+                headingRef={detailsHeading}
+                finalFocus={continuity.finalFocus}
+                reduce={reduce}
+              />
+            )}
+          </AnimatePresence>
+        </Dialog.Portal>
+      </Dialog.Root>
+    </ContinuityBoundary>
   );
 }

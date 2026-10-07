@@ -107,4 +107,16 @@ Motion identities can already participate in more than two layouts.
 Do not extract `Entity / State / Part` from this result. Future evidence would have
 to show repeated coordination across independent render owners or real portals,
 and demonstrate that a smaller semantic layer improves the direct implementation.
-Those concerns have not been exercised by this in-canvas, single-entity study.
+Those concerns were not exercised by the original in-canvas, single-entity study.
+
+## Finding from the reference clients
+
+Music subsequently exercises route-independent owners and a body portal; Photos
+adds a second domain with gallery, viewer and details. Direct implementations
+exposed repeated scope, reduced-motion, exit and focus coordination. A small
+internal hook and boundary now centralize those policies in both clients.
+
+This is an initial reuse result, not proof of a general entity/state abstraction,
+fewer components, faster rendering or a stable public API. Application state and
+semantic surfaces remain explicit. The measured comparison and boundaries are in
+`docs/continuity-extraction.md`.

@@ -6,13 +6,17 @@ Continuity is an experimental React project about preserving interface identity 
 
 ## Current objective
 
-Validate one interaction:
+Preserve the original interaction and validate its repeated coordination in the
+two authorized reference clients:
 
 ```
 compact ↔ preview ↔ player
 ```
 
-Do not expand scope until this experiment is convincing.
+`/music` exercises a persistent media session and Drawer portal; `/photos`
+exercises gallery → viewer → details and a disappearing source. Keep extraction
+limited to evidence shared by these consumers; do not add new domains or a public
+library without an explicit request.
 
 ## Rules
 
@@ -65,7 +69,9 @@ Read `docs/research.md` before proposing a competing abstraction.
   narrow layouts, resizing and reduced motion; compilation is not visual validation.
 - Local browser captures/scripts go in ignored `output/playwright/`. Keep evidence
   and the extraction decision in the existing experiment document.
-- No public API or internal Continuity prototype is justified by this experiment yet.
+- The original study alone does not justify a public entity API. The authorized
+  internal extraction for Music and Photos is documented in
+  `docs/continuity-extraction.md`; keep the original study direct for comparison.
 
 ## Reference client
 
@@ -84,8 +90,19 @@ Read `docs/research.md` before proposing a competing abstraction.
 - Keep the finite preview catalog honest. Preserve paused intent, actual playing
   history, occurrence-specific reloads, visible media errors and focus on surviving
   or replacement controls. Queue reorder supports keyboard/menu alternatives.
-- This remains a consumer example built directly with Motion and Base UI, not a
-  released Continuity runtime, component API or registry entry.
+- Music and Photos consume `useContinuity` and `ContinuityBoundary` from
+  `components/continuity/continuity.tsx`. Motion owns projection; Base UI owns
+  modal semantics and dismissal. Keep nested Escape, swipe policy, application
+  state and focus repair for disappearing controls in the consumers.
+- The hook coordinates open/exit, connected return/fallback targets, namespaced
+  part IDs and reactive reduced motion. Pass its exit callback to AnimatePresence
+  and its actions ref to Base UI. Delegate accepted changes to onOpenChange so a
+  stale exit cannot unmount a reopened surface.
+- Photos captures the visible collection when opening so filtering/removing an
+  origin does not replace the selected viewer. Captions, zoom and favorites belong
+  to the page session; source metadata is credited in `public/photos/README.md`.
+- This is an internal experimental integration, not a released runtime, stable
+  component API or registry entry. No additional animation engine is needed.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

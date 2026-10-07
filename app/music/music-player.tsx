@@ -2,21 +2,8 @@
 
 import Image from "next/image";
 import { Drawer } from "@base-ui/react/drawer";
-import {
-  AnimatePresence,
-  LayoutGroup,
-  MotionConfig,
-  arc,
-  motion,
-  useIsPresent,
-} from "motion/react";
-import {
-  useId,
-  useLayoutEffect,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from "react";
+import { AnimatePresence, arc, motion, useIsPresent } from "motion/react";
+import { useLayoutEffect, useRef, useState } from "react";
 import {
   ArrowUpRight,
   ChevronDown,
@@ -32,6 +19,11 @@ import {
   Volume2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  ContinuityBoundary,
+  useContinuity,
+  type ContinuityPartId,
+} from "@/components/continuity/continuity";
 import { Slider } from "@/components/ui/slider";
 import {
   Popover,
@@ -44,16 +36,6 @@ import { MusicQueue } from "./music-queue";
 
 const MotionPopup = motion.create(Drawer.Popup);
 const textPath = arc({ strength: 0.9, direction: "cw" });
-const reducePreference = {
-  subscribe(callback: () => void) {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)");
-    query.addEventListener("change", callback);
-    return () => query.removeEventListener("change", callback);
-  },
-  getSnapshot: () =>
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-  getServerSnapshot: () => true,
-};
 
 export function formatTime(seconds: number) {
   const value = Math.max(0, Math.floor(seconds));
@@ -121,9 +103,11 @@ function NextTrackButton({ compact = false }: { compact?: boolean }) {
 function CurrentParts({
   compact = false,
   reduce,
+  partId,
 }: {
   compact?: boolean;
   reduce: boolean;
+  partId: ContinuityPartId;
 }) {
   const { track } = useMusicSession();
   return (
@@ -131,7 +115,7 @@ function CurrentParts({
       <motion.div
         className="track-cover"
         layout
-        layoutId={`${track.id}:cover`}
+        layoutId={partId(track.id, "cover")}
         style={{ borderRadius: compact ? 8 : 18 }}
         aria-hidden="true"
       >
@@ -148,7 +132,7 @@ function CurrentParts({
       <div className="track-identity">
         <motion.div
           className="track-title"
-          layoutId={`${track.id}:title`}
+          layoutId={partId(track.id, "title")}
           layout
           transition={{ layout: { path: reduce ? undefined : textPath } }}
         >
@@ -162,7 +146,7 @@ function CurrentParts({
         </motion.div>
         <motion.div
           className="track-artist"
-          layoutId={`${track.id}:artist`}
+          layoutId={partId(track.id, "artist")}
           layout
           transition={{ layout: { path: reduce ? undefined : textPath } }}
         >
@@ -181,9 +165,11 @@ function CurrentParts({
 function MiniPlayer({
   reduce,
   openRef,
+  partId,
 }: {
   reduce: boolean;
   openRef: React.RefObject<HTMLButtonElement | null>;
+  partId: ContinuityPartId;
 }) {
   const { track } = useMusicSession();
   return (
@@ -194,7 +180,7 @@ function MiniPlayer({
       data-appearance="apple"
       aria-label="MiniPlayer"
     >
-      <CurrentParts compact reduce={reduce} />
+      <CurrentParts compact reduce={reduce} partId={partId} />
       <Drawer.Trigger
         ref={openRef}
         render={<Button variant="ghost" className="track-open" />}
@@ -308,7 +294,8 @@ function FullPlayer({
   queueOpen,
   toggleQueue,
   closeRef,
-  openRef,
+  finalFocus,
+  partId,
   queueRef,
   headingRef,
 }: {
@@ -316,7 +303,8 @@ function FullPlayer({
   queueOpen: boolean;
   toggleQueue: (open: boolean) => void;
   closeRef: React.RefObject<HTMLButtonElement | null>;
-  openRef: React.RefObject<HTMLButtonElement | null>;
+  finalFocus: () => HTMLElement | false;
+  partId: ContinuityPartId;
   queueRef: React.RefObject<HTMLButtonElement | null>;
   headingRef: React.RefObject<HTMLHeadingElement | null>;
 }) {
@@ -346,7 +334,7 @@ function FullPlayer({
           exit={{ opacity: 0 }}
           transition={{ opacity: { duration: reduce ? 0 : 0.18 } }}
           initialFocus={closeRef}
-          finalFocus={openRef}
+          finalFocus={finalFocus}
           inert={!present}
         >
           <Drawer.Description className="sr-only">
@@ -389,7 +377,7 @@ function FullPlayer({
             data-panel={queueOpen ? "queue" : "artwork"}
             aria-label="Playback controls"
           >
-            <CurrentParts reduce={reduce} />
+            <CurrentParts reduce={reduce} partId={partId} />
             <PlayerActions />
             {queueOpen && (
               <MusicQueue headingRef={headingRef} reduce={reduce} />
@@ -444,20 +432,14 @@ function FullPlayer({
 
 export function MusicPlayer() {
   const { error } = useMusicSession();
-  const [open, setOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false);
-  const reduce = useSyncExternalStore(
-    reducePreference.subscribe,
-    reducePreference.getSnapshot,
-    reducePreference.getServerSnapshot,
-  );
-  const namespace = useId();
   const openRef = useRef<HTMLButtonElement>(null);
+  const continuity = useContinuity({ returnFocus: () => openRef.current });
+  const { open, reducedMotion: reduce, partId } = continuity;
   const closeRef = useRef<HTMLButtonElement>(null);
   const queueRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const pendingFocus = useRef<"queue" | "heading" | null>(null);
-  const actionsRef = useRef<Drawer.Root.Actions>(null);
   function toggleQueue(next: boolean) {
     pendingFocus.current = next ? "heading" : "queue";
     setQueueOpen(next);
@@ -469,65 +451,58 @@ export function MusicPlayer() {
     );
     pendingFocus.current = null;
   }, [queueOpen]);
-  const transition = reduce
-    ? { type: false as const, duration: 0 }
-    : { type: "spring" as const, stiffness: 330, damping: 34, mass: 0.85 };
   return (
-    <MotionConfig transition={{ layout: transition }}>
-      <LayoutGroup id={`music-${namespace}`}>
-        <Drawer.Root
-          open={open}
-          actionsRef={actionsRef}
-          onOpenChange={(next, details) => {
-            if (
-              details.reason === "swipe" &&
-              !window.matchMedia("(max-width: 760px)").matches
-            ) {
-              details.cancel();
-              return;
-            }
-            if (!next && details.reason === "escape-key" && queueOpen) {
-              details.cancel();
-              toggleQueue(false);
-              return;
-            }
-            if (!next) details.preventUnmountOnClose();
-            else setQueueOpen(false);
-            setOpen(next);
-          }}
-        >
-          <div className="music-mini-dock">
-            <MiniPlayer reduce={reduce} openRef={openRef} />
-            <p
-              className={error && !open ? "music-mini-error" : "sr-only"}
-              role="status"
-            >
-              {!open ? error : ""}
-            </p>
-          </div>
-          <Drawer.Portal>
-            <AnimatePresence
-              initial={false}
-              onExitComplete={() => {
-                if (!open) actionsRef.current?.unmount();
-              }}
-            >
-              {open && (
-                <FullPlayer
-                  key="now-playing"
-                  reduce={reduce}
-                  queueOpen={queueOpen}
-                  toggleQueue={toggleQueue}
-                  closeRef={closeRef}
-                  openRef={openRef}
-                  queueRef={queueRef}
-                  headingRef={headingRef}
-                />
-              )}
-            </AnimatePresence>
-          </Drawer.Portal>
-        </Drawer.Root>
-      </LayoutGroup>
-    </MotionConfig>
+    <ContinuityBoundary controller={continuity}>
+      <Drawer.Root
+        open={open}
+        actionsRef={continuity.actionsRef}
+        onOpenChange={(next, details) => {
+          if (
+            details.reason === "swipe" &&
+            !window.matchMedia("(max-width: 760px)").matches
+          ) {
+            details.cancel();
+            return;
+          }
+          if (!next && details.reason === "escape-key" && queueOpen) {
+            details.cancel();
+            toggleQueue(false);
+            return;
+          }
+          if (next) setQueueOpen(false);
+          continuity.onOpenChange(next, details);
+        }}
+      >
+        <div className="music-mini-dock">
+          <MiniPlayer reduce={reduce} openRef={openRef} partId={partId} />
+          <p
+            className={error && !open ? "music-mini-error" : "sr-only"}
+            role="status"
+          >
+            {!open ? error : ""}
+          </p>
+        </div>
+        <Drawer.Portal>
+          <AnimatePresence
+            initial={false}
+            onExitComplete={continuity.onExitComplete}
+          >
+            {open && (
+              <FullPlayer
+                key="now-playing"
+                reduce={reduce}
+                queueOpen={queueOpen}
+                toggleQueue={toggleQueue}
+                closeRef={closeRef}
+                finalFocus={continuity.finalFocus}
+                partId={partId}
+                queueRef={queueRef}
+                headingRef={headingRef}
+              />
+            )}
+          </AnimatePresence>
+        </Drawer.Portal>
+      </Drawer.Root>
+    </ContinuityBoundary>
   );
 }

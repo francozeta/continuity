@@ -30,8 +30,9 @@ not an Apple Music account integration or a consumer of a published Continuity A
   MiniPlayer and a portal. Only current cover/title/artist share projection IDs.
   Catalog rows do not all participate merely because their catalog IDs match.
 - Motion supplies layout projection and springs; Base UI supplies modal,
-  dismissal gestures and accessible control behavior. No Continuity runtime or
-  public API was extracted.
+  dismissal gestures and accessible control behavior. The initial stages below
+  used direct implementations; the subsequent internal extraction is recorded in
+  [the two-consumer comparison](continuity-extraction.md).
 
 Opening and closing the modal does not transfer the audio element between
 containers. Source rows can disappear while the persistent MiniPlayer remains a
@@ -128,8 +129,11 @@ solve this client's topology with direct Motion and Base UI. Queue occurrence
 identity is distinct from song identity and transition participation; matching
 every catalog copy by song ID would introduce ambiguity.
 
-The repeated pieces worth studying are shared-part registration, a surviving
-return target and interruption/lifecycle coordination. They are still only
-demonstrated in one domain. Keep the original Default comparison and this
-consumer example independent until another domain exposes reusable semantics.
-No public API, registry entry or runtime was added in these stages.
+The repeated pieces worth studying were shared-part identity, a surviving
+return target and interruption/lifecycle coordination. At the end of these stages
+they had only been demonstrated in one domain. No public API, registry entry or
+runtime was added in the initial Music stages.
+
+On 2026-10-07 the user authorized Photos and a limited extraction. Both reference
+clients now consume the same internal hook and boundary; the original Default
+study remains direct. See [the comparison and current evidence](continuity-extraction.md).

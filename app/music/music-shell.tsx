@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Library, Music2, Search, ArrowUpLeft } from "lucide-react";
+import { Library, Music2, Search, ArrowUpLeft, Images } from "lucide-react";
 import { type ReactNode } from "react";
 import { MusicPlayer } from "./music-player";
 
@@ -36,6 +36,10 @@ export function MusicShell({ children }: { children: ReactNode }) {
           >
             <Search className="size-[18px]" aria-hidden="true" />
             Search
+          </Link>
+          <Link href="/photos">
+            <Images className="size-[18px]" aria-hidden="true" />
+            Photos
           </Link>
         </nav>
         <Link className="music-demo-link" href="/">
