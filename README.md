@@ -9,8 +9,9 @@ Instead of treating a card, preview, drawer, and full view as unrelated UI, Cont
 ## Status
 
 Experimental. v0 is a working three-state music interaction built directly with
-Motion. A useful React primitive remains unproven: one persistent React tree handles
-this experiment without a Continuity abstraction.
+Motion. A separate reference client now tests independent route owners and a body
+portal over a persistent media session. A useful React primitive remains unproven;
+both implementations use Motion and Base UI directly.
 
 ## First experiment
 
@@ -97,12 +98,15 @@ The comparison evaluates customization without inventing a Continuity runtime.
 
 **Open app** opens the reference consumer at `/music`. Library, album and search
 are independent routes over one layout-owned playback session. Its persistent
-MiniPlayer opens Now Playing directly in a full-window Base UI portal, with an
-immersive mobile composition and a wider desktop layout. Navigation and dismissal
-preserve the audio owner. The original study remains at `/`.
+MiniPlayer opens Now Playing directly in a full-window Base UI Drawer portal.
+Desktop centers a square cover above the controls; mobile keeps the full-width
+fading artwork. The queue supports next/later insertion, duplicate occurrences,
+removal, pointer/touch dragging and keyboard reordering. A mobile swipe can be
+cancelled or committed. Navigation, queue edits and dismissal preserve the audio
+owner. The original study remains at `/`.
 Implementation stages and evidence live in [`docs/reference-client.md`](docs/reference-client.md).
 
-Preview and player become bottom-aligned sheets at narrow sizes. They remain
+In the original study, preview and player become bottom-aligned sheets at narrow sizes. They remain
 nonmodal regions, so Tab follows the document. Resize either
 expanded state without resetting the track. Reduced motion replaces spatial travel
 with an immediate layout change and a short contextual fade.

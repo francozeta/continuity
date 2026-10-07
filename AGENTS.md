@@ -67,6 +67,26 @@ Read `docs/research.md` before proposing a competing abstraction.
   and the extraction decision in the existing experiment document.
 - No public API or internal Continuity prototype is justified by this experiment yet.
 
+## Reference client
+
+- The authorized `/music` application example preserves the original `/` study.
+  Read `docs/reference-client.md` for its stages and acceptance evidence.
+- `music-provider.tsx` owns one layout-persistent audio element. Session and timing
+  contexts are separate; route changes, queue edits and portal dismissal keep that
+  owner. Leaving `/music` ends its session.
+- Queue keys identify occurrences, including repeated songs; catalog IDs identify
+  songs. Only the current MiniPlayer/portal cover, title and artist participate in
+  the namespaced LayoutGroup. Do not register every catalog copy as a source.
+- The Base UI Drawer body portal fills the viewport. Desktop centers square art;
+  narrow layouts retain the full-width fading cover. Swipe dismissal is mobile;
+  scrolling, reorder handles, sliders and buttons opt out. The outer popup is not
+  projected and uses one swipe transform; shared projection stays inside it.
+- Keep the finite preview catalog honest. Preserve paused intent, actual playing
+  history, occurrence-specific reloads, visible media errors and focus on surviving
+  or replacement controls. Queue reorder supports keyboard/menu alternatives.
+- This remains a consumer example built directly with Motion and Base UI, not a
+  released Continuity runtime, component API or registry entry.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know

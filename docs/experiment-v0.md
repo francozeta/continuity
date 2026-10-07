@@ -547,3 +547,25 @@ origin catalog row was filtered out before closing; the audio element remained
 identical and playing, and focus returned to the MiniPlayer. This exercises a
 previously missing topology. It has not yet exposed repetition that would justify
 a public entity API; extraction remains evidence-driven.
+
+## Reference consumer, stages 2–3 — 2026-10-06
+
+The reference client now has editable queue occurrences and mobile dismissal
+through Base UI Drawer. Direct Motion projects current cover/title/artist between
+the MiniPlayer and a full-window body portal. The supplied desktop reference is a
+centered square cover over its controls; narrow layouts retain full-width fading
+artwork. The original v0 composition remains unchanged.
+
+The final production build passes lint, TypeScript and 57 Chromium checks for
+route/audio ownership, fullscreen sizing, queue editing, pointer/touch/keyboard
+input, cancelled and interrupted dismissal, real preview advancement, focus,
+failure recovery, reduced motion and the original Default study. Six separate
+session invariants pass in Node. The open player/queue and all three Default states
+report zero axe violations. Details and review findings are in
+[the reference client log](reference-client.md).
+
+This supplies evidence for independent owners and a portal, but still one domain.
+Audio/session ownership stays in the app, occurrence keys stay separate from
+song IDs, and transition participants are deliberately paired. No reusable
+Continuity API was extracted. Local Chromium touch emulation does not establish
+Safari/native-device parity or field performance; those remain follow-up work.
