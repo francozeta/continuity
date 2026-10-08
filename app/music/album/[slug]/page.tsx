@@ -33,7 +33,7 @@ export default async function AlbumPage({
           alt=""
           width={400}
           height={400}
-          sizes="(max-width: 640px) 240px, 280px"
+          sizes="(max-width: 640px) 240px, (max-width: 1000px) 220px, 280px"
         />
         <div>
           <p className="music-eyebrow">Album</p>

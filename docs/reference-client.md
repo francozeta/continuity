@@ -99,7 +99,7 @@ routes. The final production build passed 57 Chromium checks across seven probes
 | Concurrent edges       |      8 | Favorites/volume through route changes, long scrollable queue, touch reorder, nested popover dismissal, three queue viewport sizes and reduced-motion reorder.    |
 | Original Default       |      5 | Compact/preview/player axe audits, keyboard focus and persistent favorite/play intent.                                                                            |
 
-Six Node assertions separately check duplicate occurrence identity, invalid
+Six grouped Node checks cover duplicate occurrence identity, invalid
 permutation rejection, stable object ownership, prefix consumption, actual history,
 finite stopping and stale row selection. These are local evidence probes in ignored
 `output/playwright/`, not a newly introduced test framework. Desktop, intermediate

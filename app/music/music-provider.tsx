@@ -95,6 +95,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
     } else audio.pause();
     return () => {
       active = false;
+      audio.pause();
     };
   }, [session.playing, session.current.key]);
 
@@ -114,12 +115,17 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       error,
       playTrack(id, collection = previewTracks.map((item) => item.id)) {
         findTrack(id);
+        const index = collection.indexOf(id);
+        if (index < 0)
+          throw new Error("The selected song must belong to its collection.");
         if (id !== track.id) resetTiming();
         else {
           setError("");
-          if (audioRef.current?.ended) audioRef.current.currentTime = 0;
+          if (audioRef.current?.ended) {
+            audioRef.current.currentTime = 0;
+            setTiming((current) => ({ ...current, elapsed: 0 }));
+          }
         }
-        const index = collection.indexOf(id);
         dispatch({
           type: "select",
           trackId: id,
@@ -128,7 +134,10 @@ export function MusicProvider({ children }: { children: ReactNode }) {
       },
       togglePlayback() {
         setError("");
-        if (audioRef.current?.ended) audioRef.current.currentTime = 0;
+        if (audioRef.current?.ended) {
+          audioRef.current.currentTime = 0;
+          setTiming((current) => ({ ...current, elapsed: 0 }));
+        }
         dispatch({ type: "toggle-play" });
       },
       next() {
@@ -144,11 +153,7 @@ export function MusicProvider({ children }: { children: ReactNode }) {
           return;
         }
         resetTiming();
-        dispatch({
-          type: "select",
-          trackId: session.history[0].trackId,
-          following: [track.id, ...session.queue.map((entry) => entry.trackId)],
-        });
+        dispatch({ type: "previous" });
       },
       playQueued(key) {
         if (!session.queue.some((entry) => entry.key === key)) return;
@@ -215,7 +220,11 @@ export function MusicProvider({ children }: { children: ReactNode }) {
               dispatch({ type: "advance" });
             } else dispatch({ type: "play", playing: false });
           }}
-          onError={() => {
+          onError={(event) => {
+            const audio = event.currentTarget;
+            // load() clears the previous resource's error. An already queued
+            // error event must not stop a newer, healthy media request.
+            if (!audio.error || audio.currentSrc !== track.preview) return;
             dispatch({ type: "play", playing: false });
             setError(
               "This audio preview is unavailable. Try another song or listen on Apple Music.",

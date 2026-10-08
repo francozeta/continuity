@@ -287,6 +287,7 @@ export function TrackExperiment() {
     }
     return () => {
       current = false;
+      audio.pause();
     };
   }, [isApple, isPlaying, trackIndex]);
 
@@ -404,7 +405,7 @@ export function TrackExperiment() {
         <div
           className="comparison-toolbar"
           role="group"
-          aria-label="Component appearance"
+          aria-label="Track experiment toolbar"
         >
           <Button
             variant="ghost"

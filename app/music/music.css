@@ -586,7 +586,7 @@ html:has(.music-now-playing) {
     font-size: 13px;
   }
   .music-full-player[data-panel="queue"] .music-queue {
-    height: 100%;
+    height: calc(100% - 16px);
     width: 100%;
     margin: 16px 0 0;
   }

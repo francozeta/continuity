@@ -134,7 +134,9 @@ function CurrentParts({
           className="track-title"
           layoutId={partId(track.id, "title")}
           layout
-          transition={{ layout: { path: reduce ? undefined : textPath } }}
+          transition={{
+            layout: reduce ? { type: false, duration: 0 } : { path: textPath },
+          }}
         >
           {compact ? (
             <motion.p layout="position">{track.title}</motion.p>
@@ -148,7 +150,9 @@ function CurrentParts({
           className="track-artist"
           layoutId={partId(track.id, "artist")}
           layout
-          transition={{ layout: { path: reduce ? undefined : textPath } }}
+          transition={{
+            layout: reduce ? { type: false, duration: 0 } : { path: textPath },
+          }}
         >
           <motion.p layout="position">
             {track.artist}
@@ -313,6 +317,8 @@ function FullPlayer({
   return (
     <>
       <Drawer.Backdrop
+        inert={!present}
+        style={{ pointerEvents: present ? undefined : "none" }}
         render={
           <motion.div
             initial={{ opacity: 0 }}
@@ -323,7 +329,11 @@ function FullPlayer({
         }
         className="music-player-backdrop"
       />
-      <Drawer.Viewport className="music-player-viewport">
+      <Drawer.Viewport
+        className="music-player-viewport"
+        inert={!present}
+        style={{ pointerEvents: present ? undefined : "none" }}
+      >
         <MotionPopup
           className="music-now-playing"
           data-appearance="apple"

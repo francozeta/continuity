@@ -105,6 +105,7 @@ export function CatalogTracks({
               className="music-catalog-track"
               onClick={() => playTrack(track.id, collection)}
               aria-label={`Play ${track.title} by ${track.artist}`}
+              aria-current={current ? "true" : undefined}
             >
               <span className="music-row-art">
                 <Image

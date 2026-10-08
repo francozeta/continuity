@@ -33,6 +33,7 @@ export type MusicAction =
   | { type: "played"; trackId: number }
   | { type: "select"; trackId: number; following: readonly number[] }
   | { type: "advance"; key?: number }
+  | { type: "previous" }
   | { type: "favorite"; trackId: number }
   | { type: "add"; trackId: number; next: boolean }
   | { type: "remove"; key: number }
@@ -63,7 +64,15 @@ export function musicSessionReducer(
         : session;
     case "select": {
       if (action.trackId === session.current.trackId)
-        return { ...session, playing: true };
+        return {
+          ...session,
+          playing: true,
+          queue: action.following.map((trackId, index) => ({
+            key: session.nextKey + index,
+            trackId,
+          })),
+          nextKey: session.nextKey + action.following.length,
+        };
       const key = session.nextKey;
       return {
         ...session,
@@ -92,6 +101,17 @@ export function musicSessionReducer(
         queue: session.queue.slice(index + 1),
         history: recordCurrent(session),
         playedCurrent: false,
+      };
+    }
+    case "previous": {
+      const previous = session.history[0];
+      if (!previous) return session;
+      return {
+        ...session,
+        current: previous,
+        history: session.history.slice(1),
+        queue: [session.current, ...session.queue],
+        playedCurrent: true,
       };
     }
     case "favorite":

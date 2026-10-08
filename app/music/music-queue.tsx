@@ -48,7 +48,7 @@ function QueueRow({
       dragControls={drag}
       transition={
         reduce
-          ? { duration: 0 }
+          ? { type: false, duration: 0 }
           : { type: "spring", stiffness: 500, damping: 40 }
       }
     >
@@ -56,7 +56,7 @@ function QueueRow({
         variant="ghost"
         className="queue-track"
         onClick={() => onSelect(entry)}
-        aria-label={`Play ${track.title} next`}
+        aria-label={`Play ${track.title}`}
       >
         <Image
           src={track.artwork}
@@ -131,6 +131,12 @@ function QueueRow({
         className="icon-button queue-drag-handle"
         aria-label={`Reorder ${track.title}`}
         aria-describedby="queue-reorder-instructions"
+        onClick={() => {
+          if (!menuOpen) {
+            moreRef.current?.focus({ preventScroll: true });
+            setMenuOpen(true);
+          }
+        }}
         onPointerDown={(event) => {
           if (event.button !== 0) return;
           event.preventDefault();
@@ -176,7 +182,7 @@ export function MusicQueue({
       headingRef.current?.focus({ preventScroll: true });
     if (previousRow.current && !previousRow.current.isConnected)
       previousRow.current = null;
-  }, [session.queue, session.current.key, headingRef]);
+  }, [session.queue, session.history, session.current.key, headingRef]);
 
   function move(entry: QueueEntry, offset: -1 | 1) {
     const index = session.queue.findIndex((item) => item.key === entry.key);
@@ -198,7 +204,7 @@ export function MusicQueue({
       data-base-ui-swipe-ignore
       onFocusCapture={(event) => {
         previousRow.current = (event.target as Element).closest(
-          ".reference-queue-row",
+          ".reference-queue-row, .reference-history-row",
         );
       }}
     >
@@ -221,7 +227,7 @@ export function MusicQueue({
       </div>
       <p className="sr-only" id="queue-reorder-instructions">
         Drag to reorder. With the reorder button focused, use the up and down
-        arrow keys, or open queue actions.
+        arrow keys. Press Enter or Space to open queue actions.
       </p>
       {session.queue.length ? (
         <Reorder.Group
@@ -278,6 +284,7 @@ export function MusicQueue({
               onClick={() => {
                 dispatch({ type: "clear-history" });
                 headingRef.current?.focus({ preventScroll: true });
+                announce("History cleared.");
               }}
             >
               Clear
@@ -287,11 +294,14 @@ export function MusicQueue({
             {session.history.map((entry) => {
               const track = findTrack(entry.trackId);
               return (
-                <li key={entry.key}>
+                <li key={entry.key} className="reference-history-row">
                   <Button
                     variant="ghost"
                     className="queue-track"
-                    onClick={() => playTrack(track.id)}
+                    onClick={(event) => {
+                      previousRow.current = event.currentTarget.closest("li");
+                      playTrack(track.id);
+                    }}
                   >
                     <Image
                       src={track.artwork}

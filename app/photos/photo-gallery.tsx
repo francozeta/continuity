@@ -76,11 +76,31 @@ function PhotoImage({
   thumbnail?: boolean;
   zoomed?: boolean;
 }) {
+  const pictureRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const picture = pictureRef.current;
+    if (!picture || thumbnail) return;
+    picture.scrollLeft = zoomed
+      ? (picture.scrollWidth - picture.clientWidth) / 2
+      : 0;
+    picture.scrollTop = zoomed
+      ? (picture.scrollHeight - picture.clientHeight) / 2
+      : 0;
+  }, [photo.id, thumbnail, zoomed]);
   return (
     <motion.div
+      ref={pictureRef}
       layout
       layoutId={partId(photo.id, "image")}
       className={thumbnail ? "photos-thumbnail" : "photos-picture"}
+      data-zoomed={zoomed && !thumbnail}
+      tabIndex={zoomed && !thumbnail ? 0 : undefined}
+      role={zoomed && !thumbnail ? "region" : undefined}
+      aria-label={
+        zoomed && !thumbnail
+          ? "Zoomed photo. Use arrow keys to pan."
+          : undefined
+      }
       style={
         {
           borderRadius: thumbnail ? 10 : 0,
@@ -88,19 +108,20 @@ function PhotoImage({
         } as CSSProperties
       }
     >
-      <Image
-        src={photo.src}
-        alt={thumbnail ? "" : photo.alt}
-        fill
-        sizes={
-          thumbnail
-            ? "(max-width: 640px) calc((100vw - 52px) / 2), (max-width: 1100px) calc((100vw - 120px) / 2), (max-width: 1440px) calc((100vw - 144px) / 3), 432px"
-            : `(max-width: 640px) 100vw, min(calc(100vw - 48px), calc((100vh - 184px) * ${photo.width / photo.height}))`
-        }
-        loading={thumbnail ? "lazy" : "eager"}
-        draggable={false}
-        className={zoomed ? "photos-zoomed" : undefined}
-      />
+      <div className="photos-image-content">
+        <Image
+          src={photo.src}
+          alt={thumbnail ? "" : photo.alt}
+          fill
+          sizes={
+            thumbnail
+              ? "(max-width: 640px) calc((100vw - 52px) / 2), (max-width: 1100px) calc((100vw - 120px) / 2), (max-width: 1440px) calc((100vw - 144px) / 3), 432px"
+              : `(max-width: 640px) 100vw, min(calc(100vw - 48px), calc((100vh - 184px) * ${photo.width / photo.height}))`
+          }
+          loading={thumbnail ? "lazy" : "eager"}
+          draggable={false}
+        />
+      </div>
     </motion.div>
   );
 }
@@ -215,6 +236,12 @@ function PhotoViewer({
 }) {
   const present = useIsPresent();
   const index = collection.indexOf(selected);
+  const filmstripRef = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    filmstripRef.current
+      ?.querySelector<HTMLElement>('[aria-pressed="true"]')
+      ?.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
+  }, [selected]);
   return (
     <>
       <Dialog.Backdrop
@@ -332,7 +359,12 @@ function PhotoViewer({
               disabled={index <= 0}
               navigate={() => select(collection[index - 1])}
             />
-            <div className="photos-filmstrip" aria-label="Photos in this view">
+            <div
+              ref={filmstripRef}
+              className="photos-filmstrip"
+              role="group"
+              aria-label="Photos in this view"
+            >
               {collection.map((id) => {
                 const item = photos.find((photo) => photo.id === id)!;
                 return (
@@ -442,10 +474,9 @@ export function PhotoGallery() {
               <Link href="/photos" aria-current="page">
                 Photos
               </Link>
-              <Link href="/examples">Examples</Link>
             </div>
           </nav>
-          <main id="photos-library">
+          <main id="photos-library" tabIndex={-1}>
             <header className="photos-library-heading">
               <div>
                 <p>From orbit</p>

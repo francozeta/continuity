@@ -7,10 +7,10 @@ import { CatalogTracks } from "../track-list";
 
 export function MusicSearch() {
   const [query, setQuery] = useState("");
-  const normalized = query.trim().toLocaleLowerCase();
+  const normalized = query.trim().toLowerCase();
   const tracks = appleMusicTracks.filter((track) =>
     `${track.title} ${track.artist} ${track.album}`
-      .toLocaleLowerCase()
+      .toLowerCase()
       .includes(normalized),
   );
   return (

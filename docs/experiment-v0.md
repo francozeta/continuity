@@ -559,8 +559,8 @@ artwork. The original v0 composition remains unchanged.
 The final production build passes lint, TypeScript and 57 Chromium checks for
 route/audio ownership, fullscreen sizing, queue editing, pointer/touch/keyboard
 input, cancelled and interrupted dismissal, real preview advancement, focus,
-failure recovery, reduced motion and the original Default study. Six separate
-session invariants pass in Node. The open player/queue and all three Default states
+failure recovery, reduced motion and the original Default study. Six grouped
+session checks pass in Node. The open player/queue and all three Default states
 report zero axe violations. Details and review findings are in
 [the reference client log](reference-client.md).
 

@@ -20,7 +20,7 @@ export default function LibraryPage() {
                 alt=""
                 width={320}
                 height={320}
-                sizes="(max-width: 640px) 44vw, (max-width: 1000px) 28vw, 240px"
+                sizes="(max-width: 640px) 44vw, (max-width: 1000px) 28vw, 320px"
               />
               <h2>{album.title}</h2>
               <p>{album.artist}</p>

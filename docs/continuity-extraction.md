@@ -110,16 +110,24 @@ Axe reported zero violations for the library, open details/viewer and empty
 Favorites. This supplements visual inspection, not screen-reader speech or
 physical-device testing.
 
-The final build, including the subsequent scroll cases and Photos exit fixes,
-passed **116 Chromium checks**: 57 Music/Default, 25 Photos baseline checks,
-14 Photos interruption/selection checks, and 20 album/profile scroll checks.
-The latter preserve the actual title/action/audio nodes, focused playback control,
-saved/follow state, threshold hysteresis and fast reversal. Twelve Photos
-close/reopen cycles remained valid while exiting. Expanded/compact scroll scenes
-also had zero axe violations. The six Node session assertions were rerun.
+The Music/Photos build passed **96 Chromium checks**: 57 Music/Default,
+25 Photos baseline checks and 14 Photos interruption/selection checks.
+Twelve Photos close/reopen cycles remained valid while exiting.
+The six Node session assertions were rerun.
 Browser-managed motion was sampled at 0.1 playback rate; layout frames and final
-desktop/narrow captures were visually reviewed. See `scroll-context.md` for the
-scope and remaining separate-owner experiment.
+desktop/narrow captures were visually reviewed. Album/profile scroll headers are
+separate unfinished local development and are excluded from this change.
+
+After scope separation and review fixes, the production build passed **119
+Chromium checks**: the 96 checks above, 20 targeted media/exit/Photos checks and
+three history-cap/focus/announcement checks. Eight grouped Node checks passed,
+including repeated Previous traversal and selecting the current song from a new
+collection. History focus probes inject playing events to isolate bounded-list
+behavior; the media lifecycle probe separately exercises real preview playback.
+Targeted checks include eight Music exit reversals, current-track semantics,
+keyboard activation of queue actions, rejection of an obsolete error event,
+audio cleanup when leaving either music owner, short desktop details scrolling,
+native zoom panning and visible filmstrip selection at 320px.
 
 ### Findings and verdict
 
@@ -130,11 +138,15 @@ scope and remaining separate-owner experiment.
 | MEDIUM | Exit coordination | Each direct consumer kept its own exit/unmount policy. | One handler checks the latest accepted open request before unmounting. | Keep reopening safe while an earlier exit finishes. |
 | MEDIUM | Photo portal hit testing | The exiting backdrop could intercept a click intended to reopen the gallery source. | Exiting backdrop and viewport are inert and stop receiving pointer input. | Allow reversal while the previous exit is still animating. |
 | LOW | Details exit layout | The fading panel could occupy an implicit grid row after its layout mode closed. | The exiting panel leaves grid flow while it fades. | Keep the image canvas stable during reversal. |
+| MEDIUM | Media/session lifecycle | Same-song selection retained another collection's queue; repeated Previous alternated between two tracks; an unmounted study could keep playing. | Update the selected collection, pop the played-history stack and pause captured audio on cleanup. | Preserve the actual session across routes and playback actions. |
+| MEDIUM | Removed history focus | Selecting the oldest of twelve entries removed the focused row. | Track upcoming and history rows and restore the heading only if the focused row disappears. | Keep keyboard focus useful without stealing surviving focus. |
+| MEDIUM | Short desktop details | An intrinsic grid row could push the footer out of the viewport. | Constrain the viewer row and scroll the details panel internally. | Keep navigation and metadata reachable. |
+| LOW | Photo inspection | Scaling a clipped image hid its edges. | Zoom has native horizontal/vertical scrolling and a keyboard pan target. | Allow inspection of the entire image while retaining the stable projection box. |
 
 Follow-up review corrected thumbnail `sizes` to match the actual grid and removed
 unnecessary eager thumbnail preloads. Viewer requests account for available desktop
 height. The reduced-motion preference is now a shared utility in
-`lib/use-reduced-motion.ts`, also consumed by the new scroll examples. The line
+`lib/use-reduced-motion.ts`. The line
 table above records the original extraction decision, not a running savings metric.
 
 Verdict: retain this small internal extraction for the two reference clients.
