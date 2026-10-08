@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import {
   AnimatePresence,
   LayoutGroup,
@@ -286,6 +287,7 @@ export function TrackExperiment() {
     }
     return () => {
       current = false;
+      audio.pause();
     };
   }, [isApple, isPlaying, trackIndex]);
 
@@ -312,7 +314,7 @@ export function TrackExperiment() {
     // Only restore focus when selection removes its focused row/control.
     // Natural playback advancement should not take focus from another control.
     pendingQueueRowFocus.current = queueOpen
-      ? document.activeElement?.closest(".queue-track") ?? null
+      ? (document.activeElement?.closest(".queue-track") ?? null)
       : null;
     if (
       queueOpen &&
@@ -403,7 +405,7 @@ export function TrackExperiment() {
         <div
           className="comparison-toolbar"
           role="group"
-          aria-label="Component appearance"
+          aria-label="Track experiment toolbar"
         >
           <Button
             variant="ghost"
@@ -428,6 +430,10 @@ export function TrackExperiment() {
           >
             Apple Music
           </Button>
+          <Link href="/music" className="reference-client-link">
+            Open app
+            <ArrowUpRight className="size-3.5" aria-hidden="true" />
+          </Link>
         </div>
         <div
           className="track-stage"

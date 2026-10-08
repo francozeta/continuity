@@ -421,6 +421,23 @@ button:focus-visible {
 .comparison-toolbar [data-slot="button"]:focus-visible {
   outline-offset: 0;
 }
+.reference-client-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  color: #bcbcc2;
+  font-size: 13px;
+}
+.reference-client-link:hover {
+  color: var(--foreground);
+}
+.reference-client-link:focus-visible {
+  outline: 2px solid;
+  outline-offset: 0;
+}
 .track-title h2,
 .track-artist p {
   margin: 0;
@@ -575,7 +592,8 @@ button:focus-visible {
     "controls controls controls"
     "extras extras extras";
 }
-[data-appearance="apple"][data-state="player"][data-panel="artwork"] .track-cover {
+[data-appearance="apple"][data-state="player"][data-panel="artwork"]
+  .track-cover {
   position: relative;
   width: calc(100% + 48px);
   max-width: none;
@@ -587,7 +605,9 @@ button:focus-visible {
   box-shadow: none;
   mask-image: linear-gradient(#000 68%, transparent);
 }
-[data-appearance="apple"][data-state="player"][data-panel="artwork"] .track-cover img {
+[data-appearance="apple"][data-state="player"][data-panel="artwork"]
+  .track-cover
+  img {
   object-fit: cover;
   object-position: center 35%;
 }
