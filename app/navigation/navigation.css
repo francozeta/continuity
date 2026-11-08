@@ -1,0 +1,53 @@
+.navlab-root{position:fixed;inset:0;background:#0a0a0b;color:#f3f3f3;overflow:hidden;overscroll-behavior:none}
+.navlab-drawer-viewport{pointer-events:none;position:fixed;inset:0;z-index:10}
+.navlab-sidebar{pointer-events:auto;position:absolute;left:0;top:0;max-width:100%;height:100dvh;background:#101011;overflow:hidden}
+.navlab-sidebar-scroll,.navlab-sidebar-inner{height:100%;min-width:0;width:100%;overflow-x:clip}
+.navlab-sidebar-scroll{overflow-y:auto;scrollbar-width:none}
+.navlab-sidebar-inner{display:flex;flex-direction:column;padding:calc(24px + env(safe-area-inset-top)) 12px calc(20px + env(safe-area-inset-bottom))}
+.navlab-logo{display:flex;align-items:center;gap:10px;padding:0 10px 48px;font-size:11px;letter-spacing:.16em;font-weight:700}
+.navlab-section-label{padding:0 14px;margin:0 0 14px;color:#85858b;font-size:12px}
+.navlab-navigation{min-width:0;display:flex;flex-direction:column;gap:3px}
+.navlab-link{min-width:0;display:flex;align-items:center;gap:14px;padding:13px 14px;border-radius:11px;font-size:14px;color:#98989e;transition:background-color 160ms,color 160ms}
+.navlab-link:hover,.navlab-link:focus-visible{color:#fff;background:#242425}
+.navlab-link[data-active]{background:#1f1f20;color:#fff}
+.navlab-sidebar-footer{margin-top:auto;min-width:0;padding:20px 12px 2px;border-top:1px solid #ffffff12;font-size:12px;line-height:1.55;color:#9a9a9c;overflow-wrap:anywhere}
+.navlab-footer-title{font-size:13px;font-weight:600;color:#f5f5f5;margin:0 0 6px}
+.navlab-sidebar-footer p{margin:0 0 8px}
+.navlab-origin-link{color:#ddd;display:inline-flex;gap:6px;align-items:center;margin-top:10px;text-decoration:underline;text-underline-offset:3px}
+.navlab-foreground{position:fixed;inset:0;z-index:20;display:flex;flex-direction:column;height:100dvh;overflow:hidden;background:#111113}
+.navlab-foreground-shadow{pointer-events:none;position:absolute;inset:0 auto 0 0;width:1px;z-index:5;box-shadow:-14px 0 26px 14px #0008}
+.navlab-app-header{height:calc(68px + env(safe-area-inset-top));padding:calc(11px + env(safe-area-inset-top)) 24px 0;display:flex;gap:12px;align-items:center;flex:none;background:#111113ee;position:relative;z-index:2}
+.navlab-icon-button{border:0;background:none;border-radius:50%;display:grid;place-items:center;width:44px;height:44px;flex:none;color:#e4e4e4}
+.navlab-icon-button:hover{background:#ffffff0b}
+.navlab-app-name{font-weight:600;letter-spacing:-.025em;font-size:14px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.navlab-muted{color:#74747c;font-weight:400}
+.navlab-live-tag{margin-left:auto;font-family:monospace;letter-spacing:.11em;font-size:10px;color:#7f7f85}
+.navlab-body{min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:none}
+.navlab-body-content{max-width:760px;margin:0 auto;padding:56px 28px 160px}
+.navlab-kicker{font-size:11px;letter-spacing:.15em;color:#8f8f95;font-family:monospace;text-transform:uppercase}
+.navlab-h1{font-size:clamp(32px,8vw,64px);line-height:1.03;font-weight:550;letter-spacing:-.06em;margin:18px 0 12px;max-width:600px}
+.navlab-lede{color:#a3a3a8;line-height:1.65;font-size:14px;max-width:430px}
+.navlab-cards{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(min(100%,195px),1fr));margin-top:44px}
+.navlab-card{border-radius:17px;background:#1a1a1d;border:1px solid #ffffff0d;padding:20px;min-height:145px;display:flex;flex-direction:column;justify-content:space-between}
+.navlab-card-icon{color:#888}
+.navlab-card strong{font-size:14px;font-weight:550}
+.navlab-card span{color:#8d8d95;font-size:12px}
+.navlab-persistence-proof{margin-top:55px;border-top:1px solid #ffffff16;padding-top:21px;color:#a2a2aa;font-size:12px}
+.navlab-persistence-proof p{margin:8px 0}
+.navlab-persistence-proof strong{color:white;font-weight:500}
+.navlab-mini-label{font:10px ui-monospace,monospace;letter-spacing:.12em;color:#696970}
+.navlab-dock-wrap{position:absolute;bottom:calc(16px + env(safe-area-inset-bottom));left:0;right:0;z-index:7;pointer-events:none;display:flex;justify-content:center;padding:0 17px}
+.navlab-dock{pointer-events:auto;display:flex;gap:9px;max-width:100%;align-items:center}
+.navlab-dock-main,.navlab-dock-search{display:flex;height:54px;align-items:center;background:#eae9e6;color:#111;border-radius:999px;padding:4px;box-shadow:0 4px 16px #0008;min-width:54px}
+.navlab-dock-search{background:#353537;color:#fff}
+.navlab-dock-link{display:flex;align-items:center;justify-content:center;gap:6px;height:46px;min-width:46px;padding:0 11px;border-radius:999px;white-space:nowrap;font-size:12px;color:inherit}
+.navlab-dock-link[aria-current="page"]{background:#c8c7c3}
+.navlab-dock-label{font-weight:600}
+.navlab-dock-search.navlab-search-active{width:min(245px,calc(100vw - 110px));justify-content:stretch}
+.navlab-dock-input-wrap{height:46px;display:flex;align-items:center;gap:9px;padding:0 12px;width:100%;min-width:0}
+.navlab-dock-input-wrap input{outline:none;border:0;background:none;color:white;font-size:14px;width:100%;min-width:0}
+.navlab-dock-input-wrap input::placeholder{color:#a0a0a5}
+.navlab-close-shield{position:absolute;inset:0;z-index:8;width:100%;height:100%;background:#00000014;border:0;cursor:default}
+.navlab-grip{position:absolute;left:0;top:0;width:19px;height:85px;z-index:9}
+@media(min-width:760px){.navlab-body-content{padding-top:80px}.navlab-app-header{padding-left:32px;padding-right:32px}}
+@media(prefers-reduced-motion:reduce){.navlab-link{transition:none}}
