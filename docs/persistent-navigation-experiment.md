@@ -46,3 +46,31 @@ Visit `/navigation` (plus `/navigation/reviews`, `/navigation/library`, `/naviga
 Do **not** extract a `Continuity.Root` or publish an npm package from a single successful demo. Compare the direct Motion+Base UI shell with the existing Kocteau mobile shell and document concrete duplicated coordination that can be deleted through extraction. If the demo does not outperform direct code, keep the pattern as documented research.
 
 This branch intentionally leaves the music experiment and public library surface untouched.
+
+## Phase 2 — directly manipulable, configurable, still persistent
+
+- Header menu button is both an accessible click target and a horizontal pan surface.
+  A real drag drives a single MotionValue directly; lifting retargets the same value
+  using velocity and distance. The rest of the foreground remains scrollable and
+  does **not** intercept gestures, including a hypothetical WebGL canvas.
+- Motion profiles Tactile / Quiet / Brisk use different critically/over-damped
+  spring characteristics. They exist to gather subjective iPhone feedback, not to
+  expose a public animation API. They persist between demo routes.
+- The bottom dock and Search input are always mounted. Contextual controls use
+  inert/aria-hidden and short opacity fades, while the same capsule containers
+  change width using Motion layout. Search query remains mounted across routes.
+- Reduced motion is read through useSyncExternalStore + matchMedia change event,
+  including when the preference changes after the app was mounted.
+- Review the interactive demo on iOS Safari and in-app browsers before copying
+  this gesture model into Kocteau. Base UI remains responsible for focus semantics,
+  while native swipe dismissal within drawer content is explicitly disabled on
+  the horizontal axis to prevent two unsynchronized movement controllers.
+
+### New QA
+
+1. Compare Tactile, Quiet and Brisk on iPhone; record which one feels attached to the finger.
+2. Drag the menu trigger right, reverse left before release, and check immediate response.
+3. Repeat rapid clicks and drags. No rubber-band return or duplicate animations.
+4. Enter Search, type a query, change to Reviews, then return: same input/query.
+5. Ensure VoiceOver doesn't navigate to invisible dock controls, and the close
+   button remains keyboard-accessible when reduced motion is on.

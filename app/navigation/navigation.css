@@ -51,3 +51,30 @@
 .navlab-grip{position:absolute;left:0;top:0;width:19px;height:85px;z-index:9}
 @media(min-width:760px){.navlab-body-content{padding-top:80px}.navlab-app-header{padding-left:32px;padding-right:32px}}
 @media(prefers-reduced-motion:reduce){.navlab-link{transition:none}}
+
+/* Phase 2: persistent dock contents; only appearance transforms, not DOM replacements. */
+.navlab-dock-main, .navlab-dock-search { position:relative; flex:none; overflow:hidden; }
+.navlab-dock-main { width:218px; }
+.navlab-dock-main.navlab-dock-main-compact { width:54px; }
+.navlab-dock-search { width:54px; }
+.navlab-dock-search.navlab-search-active { width:min(230px, calc(100vw - 140px)); }
+.navlab-dock-layer { position:absolute; inset:4px; min-width:0; display:flex; align-items:center; }
+.navlab-dock-nav { justify-content:space-between; gap:0; }
+.navlab-dock-back, .navlab-dock-search-button { justify-content:center; }
+.navlab-dock-search-input { min-width:0; overflow:hidden; }
+.navlab-dock-link { flex-shrink:0; }
+.navlab-motion-panel { margin-top:20px; padding:16px 10px; border-top:1px solid #ffffff14; min-width:0; }
+.navlab-motion-panel .navlab-section-label { padding:0; }
+.navlab-motion-options { display:flex; gap:4px; background:#1b1b1d; padding:4px; border-radius:12px; }
+.navlab-motion-option { flex:1; min-width:0; border:0; background:transparent; color:#8d8d94; border-radius:8px; font-size:11px; padding:10px 4px; }
+.navlab-motion-option[aria-pressed="true"] { color:#fff; background:#373739; }
+.navlab-motion-description { margin:12px 2px 0; color:#828289; font-size:12px; line-height:1.5; }
+.navlab-menu-trigger { cursor:grab; }
+.navlab-menu-trigger:active { cursor:grabbing; }
+@media(max-width:349px) {
+  .navlab-dock-main { width:200px; }
+  .navlab-dock-link { min-width:42px; padding:0 8px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .navlab-dock-main, .navlab-dock-search, .navlab-dock-layer { transition:none !important; }
+}
