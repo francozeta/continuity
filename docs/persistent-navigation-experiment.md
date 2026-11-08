@@ -74,3 +74,7 @@ This branch intentionally leaves the music experiment and public library surface
 4. Enter Search, type a query, change to Reviews, then return: same input/query.
 5. Ensure VoiceOver doesn't navigate to invisible dock controls, and the close
    button remains keyboard-accessible when reduced motion is on.
+
+- The foreground dismiss shield must sit **below** the persistent header/menu
+  trigger so pointer drag can also close the menu after it has opened. Verify
+  this layering explicitly, not only through compile checks.
