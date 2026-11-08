@@ -78,3 +78,6 @@
 @media(prefers-reduced-motion:reduce) {
   .navlab-dock-main, .navlab-dock-search, .navlab-dock-layer { transition:none !important; }
 }
+
+/* The dismiss shield covers content, never the persistent menu drag target. */
+.navlab-app-header { z-index: 9; }
