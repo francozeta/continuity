@@ -105,7 +105,7 @@ function BeetleSurface({
             Escape closes the surface and returns focus to its trigger.
           </Dialog.Description>
 
-          <header className="beetle-popup__header">
+          <motion.header layout="position" className="beetle-popup__header">
             <BeetleMark expanded partId={partId} />
             <div className="beetle-popup__identity">
               <span className="beetle-popup__eyebrow">CONTINUITY / 001</span>
@@ -127,9 +127,9 @@ function BeetleSurface({
             >
               <X size={17} aria-hidden="true" strokeWidth={1.8} />
             </Dialog.Close>
-          </header>
+          </motion.header>
 
-          <div className="beetle-popup__body">
+          <motion.div layout="position" className="beetle-popup__body">
             <label className="beetle-popup__label" htmlFor={inputId}>
               Note
             </label>
@@ -141,12 +141,11 @@ function BeetleSurface({
               onChange={(event) => setNote(event.target.value)}
               maxLength={MAX_LENGTH}
               rows={3}
-              spellCheck={false}
               placeholder="Write something…"
             />
-          </div>
+          </motion.div>
 
-          <footer className="beetle-popup__footer">
+          <motion.footer layout="position" className="beetle-popup__footer">
             <span className="beetle-popup__retained">
               <Check size={14} aria-hidden="true" strokeWidth={1.8} />
               Retained in this instance
@@ -154,7 +153,7 @@ function BeetleSurface({
             <span className="beetle-popup__count">
               {note.length}/{MAX_LENGTH}
             </span>
-          </footer>
+          </motion.footer>
         </MotionPopup>
       </Dialog.Viewport>
     </>
