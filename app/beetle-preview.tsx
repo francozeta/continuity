@@ -2,7 +2,7 @@
 
 import { Dialog } from "@base-ui/react/dialog";
 import { AnimatePresence, motion, useIsPresent } from "motion/react";
-import { useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { ArrowUpRight, Check, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,49 +12,52 @@ import {
 } from "@/components/continuity/continuity";
 
 const MotionPopup = motion.create(Dialog.Popup);
-const entity = "beetle:prototype";
+const ENTITY = "beetle:note";
+const MAX_LENGTH = 240;
 
-function Shell({
-  expanded,
-  linked,
+/**
+ * The mark is a moving part of the same entity, not an illustration.
+ * The two plates subtly part when the working surface is open.
+ */
+function BeetleMark({
   partId,
+  expanded,
 }: {
-  expanded: boolean;
-  linked: boolean;
   partId: ContinuityPartId;
+  expanded: boolean;
 }) {
   return (
     <motion.span
       layout
-      layoutId={partId(entity, "shell")}
-      className="beetle-shell"
+      layoutId={partId(ENTITY, "mark")}
+      className="beetle-mark"
       data-expanded={expanded}
-      data-linked={linked}
-      style={{ borderRadius: expanded ? 28 : 15 }}
+      style={{ borderRadius: expanded ? 17 : 12 }}
       aria-hidden="true"
     >
-      <span className="beetle-shell__core" />
-      <span className="beetle-shell__wing beetle-shell__wing--left" />
-      <span className="beetle-shell__wing beetle-shell__wing--right" />
-      <span className="beetle-shell__seam" />
+      <span className="beetle-mark__left" />
+      <span className="beetle-mark__right" />
+      <span className="beetle-mark__center" />
     </motion.span>
   );
 }
 
-function Expanded({
+function BeetleSurface({
   partId,
-  linked,
-  setLinked,
+  note,
+  setNote,
   reduce,
-  closeRef,
+  editorRef,
   finalFocus,
+  inputId,
 }: {
   partId: ContinuityPartId;
-  linked: boolean;
-  setLinked: (next: boolean) => void;
+  note: string;
+  setNote: (next: string) => void;
   reduce: boolean;
-  closeRef: React.RefObject<HTMLButtonElement | null>;
+  editorRef: React.RefObject<HTMLTextAreaElement | null>;
   finalFocus: () => HTMLElement | false;
+  inputId: string;
 }) {
   const present = useIsPresent();
 
@@ -69,7 +72,7 @@ function Expanded({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: reduce ? 0 : 0.22 }}
+            transition={{ duration: reduce ? 0 : 0.15 }}
           />
         }
       />
@@ -80,73 +83,78 @@ function Expanded({
       >
         <MotionPopup
           className="beetle-popup"
+          layout
           layoutRoot
           layoutScroll
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+          layoutId={partId(ENTITY, "surface")}
+          initial={false}
           exit={{ opacity: 0 }}
-          transition={{ opacity: { duration: reduce ? 0 : 0.2 } }}
-          initialFocus={closeRef}
+          transition={{
+            layout: reduce
+              ? { type: false, duration: 0 }
+              : { type: "spring", stiffness: 420, damping: 38, mass: 0.8 },
+            opacity: { duration: reduce ? 0 : 0.12 },
+          }}
+          initialFocus={editorRef}
           finalFocus={finalFocus}
           inert={!present}
+          style={{ borderRadius: 25 }}
         >
-          <Dialog.Description className="beetle-sr-only">
-            Beetle maintains an interactive identity between its compact source
-            and this expanded portal. Press Escape or Fold to return.
+          <Dialog.Description className="beetle-visually-hidden">
+            Edit the note. Your text remains in this component when it folds.
+            Escape closes the surface and returns focus to its trigger.
           </Dialog.Description>
 
-          <Dialog.Close
-            ref={closeRef}
-            render={<Button variant="ghost" className="beetle-close" />}
-            aria-label="Fold Beetle"
-          >
-            <X size={18} strokeWidth={1.7} aria-hidden="true" />
-          </Dialog.Close>
-
-          <div className="beetle-popup__identity">
-            <Shell expanded linked={linked} partId={partId} />
-            <div className="beetle-popup__words">
-              <span className="beetle-eyebrow">CONTINUITY / 001</span>
+          <header className="beetle-popup__header">
+            <BeetleMark expanded partId={partId} />
+            <div className="beetle-popup__identity">
+              <span className="beetle-popup__eyebrow">CONTINUITY / 001</span>
               <Dialog.Title
                 render={
                   <motion.h2
-                    layout
-                    layoutId={partId(entity, "title")}
-                    className="beetle-popup__title"
+                    layout="position"
+                    layoutId={partId(ENTITY, "name")}
+                    className="beetle-popup__name"
                   />
                 }
               >
                 Beetle
               </Dialog.Title>
-              <motion.p
-                className="beetle-popup__subtitle"
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: reduce ? 0 : 0.2, delay: reduce ? 0 : 0.12 }}
-              >
-                One identity, different shapes.
-              </motion.p>
             </div>
+            <Dialog.Close
+              render={<Button variant="ghost" className="beetle-close" />}
+              aria-label="Close Beetle"
+            >
+              <X size={17} aria-hidden="true" strokeWidth={1.8} />
+            </Dialog.Close>
+          </header>
+
+          <div className="beetle-popup__body">
+            <label className="beetle-popup__label" htmlFor={inputId}>
+              Note
+            </label>
+            <textarea
+              ref={editorRef}
+              id={inputId}
+              className="beetle-popup__editor"
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              maxLength={MAX_LENGTH}
+              rows={3}
+              spellCheck={false}
+              placeholder="Write something…"
+            />
           </div>
 
-          <div className="beetle-popup__footer">
-            <button
-              type="button"
-              className="beetle-state-control"
-              aria-pressed={linked}
-              onClick={() => setLinked(!linked)}
-            >
-              <span className="beetle-state-control__check" aria-hidden="true">
-                {linked && <Check size={13} strokeWidth={2.5} />}
-              </span>
-              <span>Preserve state</span>
-              <span className="beetle-state-control__value">
-                {linked ? "On" : "Off"}
-              </span>
-            </button>
-            <span className="beetle-footer-hint">ESC TO FOLD</span>
-          </div>
+          <footer className="beetle-popup__footer">
+            <span className="beetle-popup__retained">
+              <Check size={14} aria-hidden="true" strokeWidth={1.8} />
+              Retained in this instance
+            </span>
+            <span className="beetle-popup__count">
+              {note.length}/{MAX_LENGTH}
+            </span>
+          </footer>
         </MotionPopup>
       </Dialog.Viewport>
     </>
@@ -154,14 +162,16 @@ function Expanded({
 }
 
 /**
- * Component-only study. Reuses the branch's internal Continuity coordination:
- * cross-portal part IDs, interruption-safe exit and returning focus.
- * This is deliberately NOT a published or stabilized Beetle API.
+ * A deliberately narrow component-only study.
+ * Base UI owns dialog semantics, Motion owns projection and the existing
+ * Continuity integration owns return focus and interruption-safe exit.
+ * It is not yet a public primitive.
  */
 export function BeetlePreview() {
-  const [linked, setLinked] = useState(true);
+  const [note, setNote] = useState("Interfaces should remember where they came from.");
   const sourceRef = useRef<HTMLButtonElement>(null);
-  const closeRef = useRef<HTMLButtonElement>(null);
+  const editorRef = useRef<HTMLTextAreaElement>(null);
+  const inputId = useId();
   const continuity = useContinuity({
     returnFocus: () => sourceRef.current,
   });
@@ -176,26 +186,34 @@ export function BeetlePreview() {
       >
         <Dialog.Trigger
           ref={sourceRef}
-          render={<button type="button" className="beetle-trigger" />}
-          aria-label="Unfold Beetle"
-        >
-          <Shell expanded={false} linked={linked} partId={partId} />
-          <span className="beetle-trigger__words">
-            <motion.span
+          render={
+            <motion.button
+              type="button"
+              className="beetle-trigger"
               layout
-              layoutId={partId(entity, "title")}
-              className="beetle-trigger__title"
+              layoutId={partId(ENTITY, "surface")}
+              style={{ borderRadius: 19 }}
+            />
+          }
+          aria-label="Open Beetle note"
+        >
+          <BeetleMark partId={partId} expanded={false} />
+          <span className="beetle-trigger__identity">
+            <motion.span
+              className="beetle-trigger__name"
+              layout="position"
+              layoutId={partId(ENTITY, "name")}
             >
               Beetle
             </motion.span>
-            <span className="beetle-trigger__subtitle">
-              {linked ? "Identity retained" : "Identity unlocked"}
+            <span className="beetle-trigger__excerpt">
+              {note.trim() || "Write something…"}
             </span>
           </span>
           <ArrowUpRight
             className="beetle-trigger__arrow"
-            size={18}
-            strokeWidth={1.7}
+            size={17}
+            strokeWidth={1.8}
             aria-hidden="true"
           />
         </Dialog.Trigger>
@@ -206,14 +224,15 @@ export function BeetlePreview() {
             onExitComplete={continuity.onExitComplete}
           >
             {open && (
-              <Expanded
+              <BeetleSurface
                 key="beetle"
                 partId={partId}
-                linked={linked}
-                setLinked={setLinked}
+                note={note}
+                setNote={setNote}
                 reduce={reduce}
-                closeRef={closeRef}
+                editorRef={editorRef}
                 finalFocus={continuity.finalFocus}
+                inputId={inputId}
               />
             )}
           </AnimatePresence>
