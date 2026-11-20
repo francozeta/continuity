@@ -1,10 +1,16 @@
-import { TrackExperiment } from "./track-experiment";
+import type { Metadata } from "next";
+import { BeetlePreview } from "./beetle-preview";
+import "./beetle.css";
+
+export const metadata: Metadata = {
+  title: "Beetle — Continuity",
+  description: "A component-only study of identity and state across surfaces.",
+};
 
 export default function Home() {
   return (
-    <main id="experiment" aria-label="Continuity music experiment">
-      <h1 className="sr-only">Continuity music experiment</h1>
-      <TrackExperiment />
+    <main className="beetle-stage" aria-label="Beetle component preview">
+      <BeetlePreview />
     </main>
   );
 }
