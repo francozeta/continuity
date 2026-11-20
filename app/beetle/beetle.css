@@ -1,0 +1,182 @@
+html:has(.beetle-stage) {
+  scrollbar-gutter: auto;
+  background: #f6f6f6;
+}
+
+.beetle-stage {
+  display: grid;
+  place-items: center;
+  min-block-size: 100svh;
+  padding: 24px clamp(16px, 4vw, 44px);
+  background: #f6f6f6;
+  color: #111;
+  color-scheme: light;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.beetle-proof {
+  --gap: clamp(6px, 1.25vw, 14px);
+  --tool-width: min(100%, 16rem);
+  --tool-height: 3.5rem;
+  --tool-offset: 0px;
+
+  position: relative;
+  display: grid;
+  inline-size: min(100%, 52rem, max(20rem, calc((100svh - 110px) * 8 / 3)));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+  padding-block-end: calc(var(--tool-height) + var(--tool-offset) + 14px);
+}
+
+.beetle-frame {
+  margin: 0;
+}
+
+.beetle-print {
+  position: relative;
+  aspect-ratio: 4 / 3;
+  background: #bcbcbc;
+}
+
+.beetle-print img {
+  object-fit: cover;
+}
+
+.beetle-dock {
+  position: absolute;
+  inline-size: var(--tool-width);
+  min-block-size: var(--tool-height);
+  pointer-events: none;
+}
+
+.beetle-dock--single {
+  inset-inline-start: max(0px, calc((50% - var(--gap) / 2 - var(--tool-width)) / 2));
+  inset-block-end: var(--tool-offset);
+}
+
+.beetle-dock--pair {
+  inset-inline-start: calc((100% - var(--tool-width)) / 2);
+  inset-block-end: 0;
+}
+
+.beetle-tool {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 12px;
+  min-block-size: var(--tool-height);
+  padding-inline: 12px 6px;
+  border-radius: 9px;
+  background: #141414;
+  color: #fff;
+  color-scheme: dark;
+  pointer-events: auto;
+}
+
+.beetle-reading {
+  display: grid;
+  gap: 2px;
+  font-size: 0.75rem;
+  line-height: 1.15;
+  font-weight: 500;
+}
+
+.beetle-value {
+  color: #bcbcbc;
+  font-variant-numeric: tabular-nums;
+  font-weight: 450;
+}
+
+.beetle-slider {
+  display: flex;
+  align-items: center;
+  min-block-size: 44px;
+  cursor: ew-resize;
+  touch-action: none;
+}
+
+.beetle-track {
+  position: relative;
+  inline-size: 100%;
+  block-size: 3px;
+  border-radius: 2px;
+  background: #666;
+}
+
+.beetle-indicator {
+  border-radius: inherit;
+  background: #eee;
+}
+
+.beetle-thumb {
+  inline-size: 10px;
+  block-size: 14px;
+  border-radius: 3px;
+  background: #fff;
+}
+
+.beetle-link {
+  display: inline-flex;
+  min-inline-size: 60px;
+  min-block-size: 44px;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+  padding-inline: 6px;
+  border-radius: 5px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.beetle-link > * {
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .beetle-link:hover {
+    background: #303030;
+  }
+}
+
+.beetle-link[data-pressed] {
+  background: #eee;
+  color: #111;
+}
+
+.beetle-link:focus-visible,
+.beetle-thumb:has(input:focus-visible) {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+
+@media (forced-colors: active) {
+  .beetle-link[data-pressed] {
+    background: Highlight;
+    color: HighlightText;
+    forced-color-adjust: none;
+  }
+
+  .beetle-link:focus-visible,
+  .beetle-thumb:has(input:focus-visible) {
+    outline-color: Highlight;
+  }
+
+  .beetle-track {
+    outline: 1px solid ButtonText;
+  }
+
+  .beetle-thumb {
+    background: ButtonText;
+    forced-color-adjust: none;
+  }
+}
+
+@media (max-width: 38rem) {
+  .beetle-proof {
+    --tool-offset: 20px;
+  }
+
+  .beetle-print {
+    aspect-ratio: 4 / 5;
+  }
+}
