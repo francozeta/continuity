@@ -1,0 +1,208 @@
+html:has(.beetle-player-stage) {
+  scrollbar-gutter: auto;
+  background: #f4f4f4;
+}
+
+.beetle-player-stage {
+  --beetle-artwork-open: clamp(7.5rem, calc(100svh - 10.5rem), 17rem);
+
+  display: grid;
+  place-items: center;
+  min-block-size: 100svh;
+  padding: 1rem;
+  background: #f4f4f4;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+.beetle-player-anchor {
+  display: grid;
+  align-items: end;
+  inline-size: min(100%, 25rem);
+  min-block-size: calc(var(--beetle-artwork-open) + 8.5rem);
+}
+
+.beetle-player {
+  display: grid;
+  gap: 4px;
+  min-inline-size: 0;
+  padding: 8px;
+  background: #151515;
+  border-radius: 16px;
+  color: #fff;
+  color-scheme: dark;
+}
+
+.beetle-player-artwork {
+  position: relative;
+  block-size: 3.75rem;
+  overflow: hidden;
+  background: #545454;
+  border-radius: 9px;
+  transition: block-size 280ms cubic-bezier(0.2, 0.7, 0.22, 1);
+}
+
+.beetle-player[data-expanded="true"] .beetle-player-artwork {
+  block-size: var(--beetle-artwork-open);
+}
+
+.beetle-player-artwork img {
+  object-fit: cover;
+  object-position: center 55%;
+}
+
+.beetle-player-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-block-size: 3.5rem;
+  padding: 3px 5px 0 10px;
+}
+
+.beetle-player-heading h1 {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 560;
+  line-height: 1.22;
+  letter-spacing: -0.025em;
+}
+
+.beetle-player-heading p {
+  margin: 4px 0 0;
+  color: #b9b9b9;
+  font-size: 0.8125rem;
+  line-height: 1.15;
+}
+
+.beetle-player-expand,
+.beetle-player-play {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 44px;
+  block-size: 44px;
+  flex-shrink: 0;
+}
+
+.beetle-player-expand {
+  border-radius: 8px;
+  color: #d4d4d4;
+}
+
+.beetle-player-expand svg,
+.beetle-player-play svg {
+  inline-size: 16px;
+  block-size: 16px;
+  pointer-events: none;
+}
+
+.beetle-player-transport {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: clamp(8px, 3vw, 14px);
+  min-block-size: 3.25rem;
+  padding: 0 9px 3px 8px;
+}
+
+.beetle-player-play {
+  border-radius: 50%;
+  background: #f5f5f5;
+  color: #151515;
+}
+
+.beetle-player-play .lucide-play {
+  margin-inline-start: 2px;
+}
+
+.beetle-player-progress {
+  min-inline-size: 0;
+}
+
+.beetle-player-progress [data-slot="slider-track"] {
+  block-size: 3px;
+  background: #656565;
+}
+
+.beetle-player-progress [data-slot="slider-range"] {
+  background: #f5f5f5;
+}
+
+.beetle-player-progress [data-slot="slider-thumb"] {
+  inline-size: 10px;
+  block-size: 10px;
+  border: 0;
+  background: #f5f5f5;
+  box-shadow: none;
+}
+
+.beetle-player-time {
+  color: #d7d7d7;
+  white-space: nowrap;
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 520;
+}
+
+.beetle-player-time span {
+  margin: 0 1px;
+  color: #8f8f8f;
+}
+
+.beetle-player-expand:focus-visible,
+.beetle-player-play:focus-visible,
+.beetle-player-progress [data-slot="slider-thumb"]:has(input:focus-visible) {
+  outline: 2px solid #fff;
+  outline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .beetle-player-expand:hover {
+    background: #2a2a2a;
+    color: #fff;
+  }
+
+  .beetle-player-play:hover {
+    background: #ddd;
+  }
+}
+
+.beetle-player-expand:active {
+  background: #363636;
+}
+
+.beetle-player-play:active {
+  background: #c8c8c8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beetle-player-artwork,
+  .beetle-player-progress [data-slot="slider-thumb"] {
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .beetle-player {
+    border: 1px solid CanvasText;
+  }
+
+  .beetle-player-progress [data-slot="slider-track"] {
+    outline: 1px solid ButtonText;
+  }
+
+  .beetle-player-progress [data-slot="slider-thumb"] {
+    background: ButtonText;
+    forced-color-adjust: none;
+  }
+
+  .beetle-player-play,
+  .beetle-player-expand {
+    border: 1px solid ButtonText;
+  }
+
+  .beetle-player-expand:focus-visible,
+  .beetle-player-play:focus-visible,
+  .beetle-player-progress [data-slot="slider-thumb"]:has(input:focus-visible) {
+    outline-color: Highlight;
+  }
+}
