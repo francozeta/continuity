@@ -27,12 +27,14 @@ function clamp(value: number, min: number, max: number) {
 export function createPhotoInteraction({
   aspectRatios,
   thumbnail,
+  gallery,
   open,
   select,
   close,
 }: {
   aspectRatios: readonly number[];
   thumbnail: (index: number) => HTMLElement | null;
+  gallery: () => HTMLElement | null;
   open: (index: number) => void;
   select: (index: number) => void;
   close: () => void;
@@ -63,6 +65,13 @@ export function createPhotoInteraction({
 
   function paintSurface() {
     if (!surface) return;
+    // The old viewer relied solely on the dialog backdrop and on hiding the
+    // selected tile. On iOS WebKit this allowed the entire source gallery to
+    // show through the contain-letterbox and reappear as a second Earth.
+    // Fade the *source surface itself* out of paint as the viewer takes over.
+    // Opacity preserves scroll position and measurable thumbnail geometry.
+    const source = gallery();
+    if (source) source.style.opacity = String(1 - travel);
     surface.backdrop.style.opacity = String(travel);
     surface.toolbar.style.opacity = String(clamp((travel - 0.2) / 0.8, 0, 1));
     if (projection) {
@@ -270,6 +279,9 @@ export function createPhotoInteraction({
         observer.disconnect();
         clearProjection();
         liftThumbnail(null);
+        // Prevent a stale invisible gallery if navigation unmounts mid-drag.
+        const source = gallery();
+        if (source) source.style.opacity = "";
         surface = null;
         images = [];
       };
@@ -354,6 +366,8 @@ export function createPhotoInteraction({
       spring.destroy();
       clearProjection();
       liftThumbnail(null);
+      const source = gallery();
+      if (source) source.style.opacity = "";
     },
   };
 }
