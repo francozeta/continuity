@@ -36,7 +36,9 @@
 }
 
 .thumbnail[data-lifted] img {
-  opacity: 0;
+  /* Keep the source in layout but remove it from paint while the viewer owns
+     the photo. Opacity alone can leave a composited ghost on mobile Safari. */
+  visibility: hidden;
 }
 
 .thumbnail,
