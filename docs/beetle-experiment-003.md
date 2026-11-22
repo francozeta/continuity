@@ -21,10 +21,30 @@ arrow keys, Previous, Next, Close and Escape provide alternatives. [Experiment 0
 - Paging keeps the dialog and its controls mounted. Closing returns the last
   viewed photo to its own thumbnail and restores focus there. If the thumbnail
   is offscreen, the grid scrolls it into view before the return.
+- An idle tap in the black letterbox around the painted photo dismisses the
+  viewer. The image's DOM box fills the viewport, so the hit target is measured
+  from the fitted image's actual aspect ratio, not the DOM element bounds.
+  A tap on the photo itself does nothing; a horizontal drag from the empty
+  area still pages or dismisses at an edge. The toolbar and its controls
+  remain independent.
 - During a transition, the viewer lays out its photo layer once the thumbnail
   is hidden and the projection is positioned. On close, the layer leaves
   layout before the thumbnail returns, with the final transform held until
   the dialog detaches.
+
+## MDS review: “toque de la nada” (escape tap)
+
+This is a local photo-viewer interaction, not a new global Beetle gesture.
+The viewer's empty space is an intentional dismissal target only when no
+surface animation or drag owns the gesture. The tap detector rejects movement
+of at least 8 CSS pixels and ignores canceled and non-primary pointers.
+Clicking the visible photo must not close it. Close, Escape, edge swipe, and
+empty-space tap all retain the same surface-return animation and Base UI focus
+restoration to the last photo.
+
+The original iPhone capture showed the Earth image and thumbnail painted at
+once. The prior handoff regression validates the photo layer exits layout
+before the thumbnail returns; actual-device visual verification still matters.
 
 ## What the two experiments share
 
