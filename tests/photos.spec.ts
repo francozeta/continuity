@@ -124,6 +124,47 @@ test("keeps the selected photo through a viewport resize", async ({ page }) => {
   await expect(tile).toBeInViewport();
 });
 
+test("only the active viewer owns the selected photo, including after paging", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const earth = page.getByRole("button", { name: "Earth from DSCOVR", includeHidden: true });
+  const namib = page.getByRole("button", { name: "Namib Desert", includeHidden: true });
+  await earth.tap();
+  const dialog = viewer(page);
+  await showsPhoto(dialog, "Earth from DSCOVR");
+
+  // Regression for an iPhone compositor ghost: the source tile must remain
+  // unpainted after opening settles, not only while it is animating.
+  await expect(earth).toHaveAttribute("data-lifted", "");
+  await expect(earth.locator("img")).toHaveCSS("visibility", "hidden");
+
+  await dialog.getByRole("button", { name: "Next photo" }).tap();
+  await showsPhoto(dialog, "Namib Desert");
+  await expect(earth).not.toHaveAttribute("data-lifted", "");
+  await expect(earth.locator("img")).toHaveCSS("visibility", "visible");
+  await expect(namib).toHaveAttribute("data-lifted", "");
+  await expect(namib.locator("img")).toHaveCSS("visibility", "hidden");
+
+  await dialog.getByRole("button", { name: "Close viewer" }).tap();
+  await expect(dialog).toHaveCount(0);
+  await expect(namib).not.toHaveAttribute("data-lifted", "");
+  await expect(namib.locator("img")).toHaveCSS("visibility", "visible");
+  await expect(namib).toBeFocused();
+});
+
+test("reopening the same source never leaves a duplicate thumbnail painted", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const earth = page.getByRole("button", { name: "Earth from DSCOVR", includeHidden: true });
+  for (let repeat = 0; repeat < 2; repeat++) {
+    await earth.tap();
+    const dialog = viewer(page);
+    await showsPhoto(dialog, "Earth from DSCOVR");
+    await expect(earth.locator("img")).toHaveCSS("visibility", "hidden");
+    await dialog.getByRole("button", { name: "Close viewer" }).tap();
+    await expect(dialog).toHaveCount(0);
+    await expect(earth.locator("img")).toHaveCSS("visibility", "visible");
+  }
+});
+
 test("stops painting the viewer photo before revealing its thumbnail", async ({ page }) => {
   const earth = page.getByRole("button", { name: "Earth from DSCOVR", includeHidden: true });
   await earth.tap();
