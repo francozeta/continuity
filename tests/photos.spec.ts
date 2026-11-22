@@ -124,6 +124,31 @@ test("keeps the selected photo through a viewport resize", async ({ page }) => {
   await expect(tile).toBeInViewport();
 });
 
+test("the settled viewer owns an opaque surface and the gallery is fully unpainted", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const gallery = page.locator('main[aria-label="Photos"]');
+  const earth = page.getByRole("button", { name: "Earth from DSCOVR", includeHidden: true });
+  await earth.tap();
+  const dialog = viewer(page);
+  await showsPhoto(dialog, "Earth from DSCOVR");
+
+  // Hiding the thumbnail alone is insufficient: the whole gallery used to
+  // bleed through the viewer's transparent letterbox on the real iPhone.
+  await expect(gallery).toHaveCSS("opacity", "0");
+  await expect(dialog).toHaveCSS("background-color", "rgb(20, 20, 20)");
+  await expect(earth.locator("img")).toHaveCSS("visibility", "hidden");
+
+  await dialog.getByRole("button", { name: "Next photo" }).tap();
+  await showsPhoto(dialog, "Namib Desert");
+  await expect(gallery).toHaveCSS("opacity", "0");
+  await expect(dialog).toHaveCSS("background-color", "rgb(20, 20, 20)");
+
+  await dialog.getByRole("button", { name: "Close viewer" }).tap();
+  await expect(dialog).toHaveCount(0);
+  await expect(gallery).toHaveCSS("opacity", "1");
+  await expect(earth).not.toHaveAttribute("data-lifted", "");
+});
+
 test("only the active viewer owns the selected photo, including after paging", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   const earth = page.getByRole("button", { name: "Earth from DSCOVR", includeHidden: true });
