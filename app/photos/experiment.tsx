@@ -42,6 +42,7 @@ function Viewer({ index, thumbnail, interaction }: {
   const viewport = useRef<HTMLDivElement>(null);
   const rail = useRef<HTMLUListElement>(null);
   const close = useRef<HTMLButtonElement>(null);
+  const tap = useRef<{ pointerId: number; x: number; y: number; moved: boolean } | null>(null);
 
   useLayoutEffect(() => {
     if (!popup.current || !backdrop.current || !toolbar.current || !viewport.current || !rail.current) return;
@@ -101,9 +102,45 @@ function Viewer({ index, thumbnail, interaction }: {
         <div
           ref={viewport}
           className={styles.viewport}
+          data-photo-viewport=""
+          onPointerDownCapture={(event) => {
+            if (!event.isPrimary || event.button !== 0) {
+              tap.current = null;
+              return;
+            }
+            tap.current = {
+              pointerId: event.pointerId,
+              x: event.clientX,
+              y: event.clientY,
+              moved: false,
+            };
+          }}
+          onPointerMoveCapture={(event) => {
+            const press = tap.current;
+            if (press?.pointerId === event.pointerId &&
+                Math.hypot(event.clientX - press.x, event.clientY - press.y) >= 8) {
+              press.moved = true;
+            }
+          }}
+          onPointerUpCapture={(event) => {
+            const press = tap.current;
+            if (press?.pointerId === event.pointerId &&
+                Math.hypot(event.clientX - press.x, event.clientY - press.y) >= 8) {
+              press.moved = true;
+            }
+          }}
+          onPointerCancelCapture={(event) => {
+            if (tap.current?.pointerId === event.pointerId) tap.current = null;
+          }}
           onPointerDown={(event) => {
             if (event.pointerType === "mouse" && event.button === 0) event.preventDefault();
             interaction.current?.dragViewer(event.currentTarget, event.nativeEvent);
+          }}
+          onClick={(event) => {
+            const press = tap.current;
+            tap.current = null;
+            if (!press || press.moved || event.detail === 0 || event.defaultPrevented) return;
+            interaction.current?.tapEmpty(event.clientX, event.clientY);
           }}
         >
           <ul ref={rail} className={styles.rail} aria-label="Viewer photos" role="list" hidden>
