@@ -1,10 +1,5 @@
-import { TrackExperiment } from "./track-experiment";
+import { BeetleExperiment } from "./beetle-experiment";
 
 export default function Home() {
-  return (
-    <main id="experiment" aria-label="Continuity music experiment">
-      <h1 className="sr-only">Continuity music experiment</h1>
-      <TrackExperiment />
-    </main>
-  );
+  return <BeetleExperiment />;
 }
