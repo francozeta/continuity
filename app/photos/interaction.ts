@@ -43,6 +43,10 @@ export function createPhotoInteraction({
   let surface: Surface | null = null;
   let images: HTMLImageElement[] = [];
   let projection: Projection | null = null;
+  // The currently selected thumbnail must stay unpainted for the entire
+  // viewer session, not just during the opening spring. This is independent
+  // of the transient projection used to animate between surfaces.
+  let liftedThumbnail: HTMLElement | null = null;
   let index = 0;
   let openView = false;
   let motion: Motion | null = null;
@@ -68,9 +72,15 @@ export function createPhotoInteraction({
     }
   }
 
+  function liftThumbnail(next: HTMLElement | null) {
+    if (liftedThumbnail === next) return;
+    liftedThumbnail?.removeAttribute("data-lifted");
+    liftedThumbnail = next;
+    liftedThumbnail?.setAttribute("data-lifted", "");
+  }
+
   function clearProjection() {
     if (!projection) return;
-    projection.thumbnail.removeAttribute("data-lifted");
     projection.image.style.transform = "";
     projection = null;
   }
@@ -86,6 +96,7 @@ export function createPhotoInteraction({
       tile = thumb.getBoundingClientRect();
     }
     if (projection?.thumbnail !== thumb) clearProjection();
+    liftThumbnail(thumb);
 
     // Both images use object-fit: contain. The scale maps their fitted
     // rectangles while the translation aligns their centers.
@@ -99,7 +110,6 @@ export function createPhotoInteraction({
       y: tile.top + tile.height / 2 - (viewport.top + viewport.height / 2),
       scale: tileWidth / fittedWidth,
     };
-    thumb.setAttribute("data-lifted", "");
   }
 
   function setMotion(next: Motion | null) {
@@ -141,7 +151,8 @@ export function createPhotoInteraction({
             surface.rail.hidden = true;
             surface.popup.style.visibility = "hidden";
           }
-          projection?.thumbnail.removeAttribute("data-lifted");
+          liftThumbnail(null);
+          clearProjection();
           setMotion(null);
           openView = false;
           close();
@@ -166,6 +177,7 @@ export function createPhotoInteraction({
   function settlePage(next: number, velocity = 0) {
     if (index !== next) {
       index = next;
+      liftThumbnail(thumbnail(next));
       select(next);
     }
     setMotion("paging");
@@ -196,6 +208,7 @@ export function createPhotoInteraction({
     travel = destination = 0;
     forward = -1;
     closeAfterPaging = false;
+    liftThumbnail(thumbnail(next));
     if (surface) {
       surface.rail.hidden = true;
       clearProjection();
@@ -256,6 +269,7 @@ export function createPhotoInteraction({
       return () => {
         observer.disconnect();
         clearProjection();
+        liftThumbnail(null);
         surface = null;
         images = [];
       };
@@ -339,6 +353,7 @@ export function createPhotoInteraction({
       drag.destroy();
       spring.destroy();
       clearProjection();
+      liftThumbnail(null);
     },
   };
 }
