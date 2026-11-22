@@ -17,6 +17,25 @@ async function box(locator: Locator) {
   return result;
 }
 
+async function photoTapPoints(dialog: Locator) {
+  return dialog.locator("[data-photo-viewport]").evaluate((element) => {
+    const bounds = element.getBoundingClientRect();
+    const image = element.querySelector<HTMLImageElement>('li[aria-hidden="false"] img')!;
+    const ratio = Number(image.getAttribute("width")) / Number(image.getAttribute("height"));
+    const fittedWidth = Math.min(bounds.width, bounds.height * ratio);
+    const fittedHeight = fittedWidth / ratio;
+    const leftGap = (bounds.width - fittedWidth) / 2;
+    const topGap = (bounds.height - fittedHeight) / 2;
+    return {
+      inside: { x: bounds.left + bounds.width / 2, y: bounds.top + bounds.height / 2 },
+      outside: leftGap > topGap
+        ? { x: bounds.left + leftGap / 2, y: bounds.top + bounds.height / 2 }
+        : { x: bounds.left + bounds.width / 2, y: bounds.top + topGap / 2 },
+      gap: Math.max(leftGap, topGap),
+    };
+  });
+}
+
 async function nextFrames(page: Page) {
   await page.evaluate(() => new Promise<void>((resolve) => {
     requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
@@ -129,6 +148,38 @@ test("stops painting the viewer photo before revealing its thumbnail", async ({ 
   await expect(earth).toBeFocused();
 });
 
+test("a tap on the photo stays open; a tap in its empty letterbox closes", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  const earth = page.getByRole("button", { name: "Earth from DSCOVR", includeHidden: true });
+  await earth.tap();
+  const dialog = viewer(page);
+  await showsPhoto(dialog, "Earth from DSCOVR");
+  const { inside, outside, gap } = await photoTapPoints(dialog);
+  expect(gap).toBeGreaterThan(12);
+
+  await page.touchscreen.tap(inside.x, inside.y);
+  await showsPhoto(dialog, "Earth from DSCOVR");
+
+  await page.touchscreen.tap(outside.x, outside.y);
+  await expect(dialog).toHaveCount(0);
+  await expect(earth).toBeFocused();
+});
+
+test("empty-space dismissal restores focus to the most recently paged photo", async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.getByRole("button", { name: "Earth from DSCOVR", includeHidden: true }).tap();
+  const dialog = viewer(page);
+  await showsPhoto(dialog, "Earth from DSCOVR");
+  await dialog.getByRole("button", { name: "Next photo" }).tap();
+  await showsPhoto(dialog, "Namib Desert");
+
+  const { outside, gap } = await photoTapPoints(dialog);
+  expect(gap).toBeGreaterThan(12);
+  await page.touchscreen.tap(outside.x, outside.y);
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Namib Desert" })).toBeFocused();
+});
+
 test.describe("native Chromium touch input", () => {
   test.beforeEach(({ browserName }) => {
     test.skip(browserName !== "chromium", "Uses Chromium's trusted touch input protocol");
@@ -188,6 +239,19 @@ test.describe("native Chromium touch input", () => {
     await finger.end();
     await expect(dialog).toHaveCount(0);
     await expect(tile).toBeFocused();
+  });
+
+  test("a horizontal swipe from empty space pages without dismissing", async ({ page }) => {
+    await page.getByRole("button", { name: "Earth from DSCOVR", includeHidden: true }).tap();
+    const dialog = viewer(page);
+    await showsPhoto(dialog, "Earth from DSCOVR");
+    const { outside } = await photoTapPoints(dialog);
+    const finger = await touch(page);
+
+    await finger.start(outside.x, outside.y);
+    for (let step = 1; step <= 7; step++) await finger.move(outside.x - 28 * step, outside.y);
+    await finger.end();
+    await showsPhoto(dialog, "Namib Desert");
   });
 
   test("a canceled edge drag restores the viewer on the last photo", async ({ page }) => {
