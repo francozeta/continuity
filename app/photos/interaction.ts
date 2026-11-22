@@ -301,6 +301,25 @@ export function createPhotoInteraction({
       closeAfterPaging = false;
       settlePage(next);
     },
+    tapEmpty(x: number, y: number) {
+      // The image fills the slide element, but object-fit: contain means its
+      // actual painted rectangle can be much smaller than the viewport.
+      // Only an idle, unclaimed tap in that letterbox is an escape gesture.
+      if (!surface || !openView || motion !== null || drag.active) return;
+      const viewport = surface.viewport.getBoundingClientRect();
+      const ratio = aspectRatios[index];
+      if (viewport.width <= 0 || viewport.height <= 0 || !ratio) return;
+      const imageWidth = Math.min(viewport.width, viewport.height * ratio);
+      const imageHeight = imageWidth / ratio;
+      const imageLeft = viewport.left + (viewport.width - imageWidth) / 2;
+      const imageTop = viewport.top + (viewport.height - imageHeight) / 2;
+      const onPhoto =
+        x >= imageLeft && x <= imageLeft + imageWidth &&
+        y >= imageTop && y <= imageTop + imageHeight;
+      if (onPhoto) return;
+      returnToGrid(-1);
+      settleSurface(0);
+    },
     dismiss(escape: boolean) {
       if (!openView) return;
       if (escape && drag.active) {
