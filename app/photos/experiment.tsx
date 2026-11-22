@@ -158,6 +158,7 @@ function Viewer({ index, thumbnail, interaction }: {
 
 export function PhotoExperiment() {
   const interaction = useRef<PhotoInteraction | null>(null);
+  const gallery = useRef<HTMLElement>(null);
   const thumbnails = useRef<(HTMLElement | null)[]>([]);
   const [selection, setSelection] = useState<Selection | null>(null);
 
@@ -165,6 +166,7 @@ export function PhotoExperiment() {
     const instance = createPhotoInteraction({
       aspectRatios,
       thumbnail: (index) => thumbnails.current[index] ?? null,
+      gallery: () => gallery.current,
       open(index) {
         setSelection({ trigger: index, index, open: true });
       },
@@ -196,7 +198,7 @@ export function PhotoExperiment() {
         }
       }}
     >
-      <main className={styles.gallery} aria-label="Photos" data-viewing={selection?.open || undefined}>
+      <main ref={gallery} className={styles.gallery} aria-label="Photos" data-viewing={selection?.open || undefined}>
         <ul className={styles.grid} role="list">
           {photos.map((photo, index) => (
             <li key={photo.file}>
