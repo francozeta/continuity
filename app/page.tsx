@@ -1,10 +1,11 @@
-import { TrackExperiment } from "./track-experiment";
+import type { Metadata } from "next";
+import { BeetleExperiment } from "./beetle/experiment";
+
+export const metadata: Metadata = {
+  title: "Beetle — Continuity",
+  description: "A touch interaction experiment using checklists.",
+};
 
 export default function Home() {
-  return (
-    <main id="experiment" aria-label="Continuity music experiment">
-      <h1 className="sr-only">Continuity music experiment</h1>
-      <TrackExperiment />
-    </main>
-  );
+  return <BeetleExperiment />;
 }
