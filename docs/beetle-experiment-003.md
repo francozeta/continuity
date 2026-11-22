@@ -21,8 +21,16 @@ arrow keys, Previous, Next, Close and Escape provide alternatives. [Experiment 0
 - Paging keeps the dialog and its controls mounted. Closing returns the last
   viewed photo to its own thumbnail and restores focus there. If the thumbnail
   is offscreen, the grid scrolls it into view before the return.
+- During a transition, the viewer lays out its photo layer once the thumbnail
+  is hidden and the projection is positioned. On close, the layer leaves
+  layout before the thumbnail returns, with the final transform held until
+  the dialog detaches.
 
 ## What the two experiments share
+
+Beetle is an interaction primitive built on Base UI primitives and the Vercel
+UI SDK. It coordinates changes of surface while preserving the user's active
+gesture, visual origin and focus target.
 
 Both use the private `createHorizontalDrag` and `createBeetleSpring` functions.
 The first uses UI SDK `bindDrag` and `createVelocityTracker` for capture, frame
@@ -52,9 +60,9 @@ Run `pnpm lint`, `pnpm exec next typegen && pnpm exec tsc --noEmit`, and
 `pnpm test:e2e`. The production browser suite covers both experiments and
 `/track`. The photo cases cover focus after paging, re-grabbing both settles,
 rotation, native grid scroll, routing a swipe at both edges, and cancellation.
-The production suite passed 26 cases across Chromium and WebKit. Eight
-Chromium touch protocol cases were skipped on WebKit. A separate WebKit run with
-trusted touch input covered opening from a tile, paging both ways, edge
+The Earth photo regression checks that the viewer's photo layer has left
+layout at the instant the scrolled thumbnail reappears. A separate WebKit run
+with trusted touch input covered opening from a tile, paging both ways, edge
 dismissal and focus return.
 
 Two production-build Chromium traces each sent 24 trusted touch moves after

@@ -106,7 +106,7 @@ function Viewer({ index, thumbnail, interaction }: {
             interaction.current?.dragViewer(event.currentTarget, event.nativeEvent);
           }}
         >
-          <ul ref={rail} className={styles.rail} aria-label="Viewer photos" role="list">
+          <ul ref={rail} className={styles.rail} aria-label="Viewer photos" role="list" hidden>
             {photos.map((photo, position) => (
               <li key={photo.file} className={styles.slide} aria-hidden={position !== index}>
                 <PhotoImage index={position} eager={Math.abs(position - index) <= 1} />

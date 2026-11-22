@@ -105,6 +105,30 @@ test("keeps the selected photo through a viewport resize", async ({ page }) => {
   await expect(tile).toBeInViewport();
 });
 
+test("stops painting the viewer photo before revealing its thumbnail", async ({ page }) => {
+  const earth = page.getByRole("button", { name: "Earth from DSCOVR", includeHidden: true });
+  await earth.tap();
+  const dialog = viewer(page);
+  await showsPhoto(dialog, "Earth from DSCOVR");
+
+  // Sample the handoff synchronously. The dialog can unmount in the same frame.
+  await earth.evaluate((tile) => {
+    const rail = document.querySelector<HTMLUListElement>('[aria-label="Viewer photos"]')!;
+    const removeAttribute = tile.removeAttribute;
+    tile.removeAttribute = function (name) {
+      if (name === "data-lifted" && this.hasAttribute(name)) {
+        this.dataset.viewerRailHiddenAtHandoff = String(rail.getClientRects().length === 0);
+      }
+      return removeAttribute.call(this, name);
+    };
+  });
+
+  await dialog.getByRole("button", { name: "Close viewer" }).tap();
+  await expect(dialog).toHaveCount(0);
+  await expect(earth).toHaveAttribute("data-viewer-rail-hidden-at-handoff", "true");
+  await expect(earth).toBeFocused();
+});
+
 test.describe("native Chromium touch input", () => {
   test.beforeEach(({ browserName }) => {
     test.skip(browserName !== "chromium", "Uses Chromium's trusted touch input protocol");

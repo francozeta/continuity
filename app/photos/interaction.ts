@@ -75,12 +75,11 @@ export function createPhotoInteraction({
     projection = null;
   }
 
-  function measureProjection(ensureThumbnailIsVisible: boolean) {
+  function measureProjection(viewport: DOMRectReadOnly, ensureThumbnailIsVisible = false) {
     const image = images[index];
     const thumb = thumbnail(index);
-    if (!surface || !thumb || !image) return;
+    if (!thumb || !image || viewport.width === 0 || viewport.height === 0) return;
 
-    const viewport = surface.viewport.getBoundingClientRect();
     let tile = thumb.getBoundingClientRect();
     if (ensureThumbnailIsVisible && (tile.top < 0 || tile.bottom > window.innerHeight)) {
       thumb.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "instant" });
@@ -98,7 +97,7 @@ export function createPhotoInteraction({
       image,
       x: tile.left + tile.width / 2 - (viewport.left + viewport.width / 2),
       y: tile.top + tile.height / 2 - (viewport.top + viewport.height / 2),
-      scale: fittedWidth > 0 ? tileWidth / fittedWidth : 1,
+      scale: tileWidth / fittedWidth,
     };
     thumb.setAttribute("data-lifted", "");
   }
@@ -107,6 +106,18 @@ export function createPhotoInteraction({
     motion = next;
     if (next) surface?.popup.setAttribute("data-motion", next);
     else surface?.popup.removeAttribute("data-motion");
+  }
+
+  function synchronizeSurface() {
+    if (!surface || !openView) return;
+    const viewport = surface.viewport.getBoundingClientRect();
+    if (viewport.width === 0 || viewport.height === 0) return;
+
+    pageWidth = viewport.width;
+    if (motion === "surface") measureProjection(viewport);
+    paintPage();
+    paintSurface();
+    surface.rail.hidden = motion === "surface" && !projection;
   }
 
   function settleSurface(next: 0 | 1, velocity = 0) {
@@ -123,13 +134,22 @@ export function createPhotoInteraction({
       done() {
         travel = next;
         paintSurface();
-        if (next === 0 && surface) surface.popup.style.visibility = "hidden";
-        clearProjection();
-        setMotion(null);
         if (next === 0) {
+          // Remove the photo layer before returning the thumbnail. Keep the
+          // last transform on the viewer image until the dialog detaches.
+          if (surface) {
+            surface.rail.hidden = true;
+            surface.popup.style.visibility = "hidden";
+          }
+          projection?.thumbnail.removeAttribute("data-lifted");
+          setMotion(null);
           openView = false;
           close();
+          return;
         }
+        clearProjection();
+        setMotion(null);
+        if (surface?.rail.hidden) synchronizeSurface();
       },
     });
   }
@@ -137,7 +157,10 @@ export function createPhotoInteraction({
   function returnToGrid(direction: Direction) {
     forward = direction;
     setMotion("surface");
-    measureProjection(true);
+    if (surface) {
+      measureProjection(surface.viewport.getBoundingClientRect(), true);
+      if (!projection) surface.rail.hidden = true;
+    }
   }
 
   function settlePage(next: number, velocity = 0) {
@@ -173,9 +196,14 @@ export function createPhotoInteraction({
     travel = destination = 0;
     forward = -1;
     closeAfterPaging = false;
-    if (surface) surface.popup.style.visibility = "";
+    if (surface) {
+      surface.rail.hidden = true;
+      clearProjection();
+      surface.popup.style.visibility = "";
+    }
     setMotion("surface");
     open(next);
+    synchronizeSurface();
   }
 
   function surfaceOwner(previous: 0 | 1) {
@@ -222,14 +250,8 @@ export function createPhotoInteraction({
       images = Array.from(elements.rail.querySelectorAll("img"));
       elements.popup.style.visibility = "";
       setMotion(motion);
-      const measure = () => {
-        pageWidth = elements.viewport.getBoundingClientRect().width || 1;
-        if (motion === "surface") measureProjection(false);
-        paintPage();
-        paintSurface();
-      };
-      measure();
-      const observer = new ResizeObserver(measure);
+      synchronizeSurface();
+      const observer = new ResizeObserver(synchronizeSurface);
       observer.observe(elements.viewport);
       return () => {
         observer.disconnect();
