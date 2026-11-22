@@ -74,6 +74,12 @@
   color: white;
 }
 
+/* A settled viewer must have its own opaque surface. The separate animated
+   backdrop cannot be the only thing covering the source grid in WebKit. */
+.popup:not([data-motion="surface"]) {
+  background: #141414;
+}
+
 .toolbar {
   position: absolute;
   z-index: 1;
