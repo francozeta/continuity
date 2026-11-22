@@ -1,374 +1,283 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { Tabs } from "@base-ui/react/tabs";
-import { ArrowDown, ArrowUp, CornerDownLeft, RotateCcw, MoveVertical, ArrowUpRight } from "lucide-react";
+import { ArrowDown, ArrowUp, MoveUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import "./beetle.css";
 
-type Snap = "compact" | "peek" | "expanded";
-type Feel = "precise" | "soft" | "elastic";
-type Phase = "READY" | "DRAGGING" | "SETTLING" | "INTERRUPTED";
-type RecordedPoint = { y: number; t: number };
+type Position = "compact" | "peek" | "open";
+type GestureSample = { y: number; time: number };
+const positions: Position[] = ["open", "peek", "compact"];
 
-const ORDER: Snap[] = ["expanded", "peek", "compact"];
-const PRESETS: Record<Feel, { stiffness: number; damping: number }> = {
-  precise: { stiffness: 510, damping: 42 },
-  soft: { stiffness: 290, damping: 32 },
-  elastic: { stiffness: 640, damping: 30 },
-};
-
-function elasticClamp(y: number, max: number) {
-  if (y < 0) return -70 * (1 - Math.exp(y / 70));
-  if (y > max) return max + 70 * (1 - Math.exp(-(y - max) / 70));
-  return y;
+function resistance(value: number, maximum: number) {
+  if (value < 0) return -58 * (1 - Math.exp(value / 58));
+  if (value > maximum) return maximum + 58 * (1 - Math.exp(-(value - maximum) / 58));
+  return value;
 }
 
 export function BeetleExperiment() {
   const stageRef = useRef<HTMLDivElement>(null);
-  const surfaceRef = useRef<HTMLDivElement>(null);
-  const handleRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const phaseRef = useRef<HTMLSpanElement>(null);
-  const speedRef = useRef<HTMLSpanElement>(null);
-  const jumpRef = useRef<(target: Snap) => void>(() => {});
-  const snapRef = useRef<Snap>("compact");
-  const presetRef = useRef<Feel>("precise");
-  const [snap, setSnap] = useState<Snap>("compact");
-  const [feel, setFeel] = useState<Feel>("precise");
-  const [reduced, setReduced] = useState(false);
-
-  presetRef.current = feel;
+  const cardRef = useRef<HTMLDivElement>(null);
+  const handleRef = useRef<HTMLButtonElement>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
+  const navigateRef = useRef<(position: Position) => void>(() => {});
+  const [position, setPosition] = useState<Position>("compact");
 
   useEffect(() => {
     const stage = stageRef.current;
-    const surface = surfaceRef.current;
-    const grip = handleRef.current;
-    const content = contentRef.current;
-    if (!stage || !surface || !grip || !content) return;
+    const card = cardRef.current;
+    const handle = handleRef.current;
+    const body = bodyRef.current;
+    if (!stage || !card || !handle || !body) return;
 
-    const motionPreference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    let reduceMotion = motionPreference.matches;
-    let max = 0;
-    let y = 0;
-    let velocity = 0;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let reduceMotion = reduce.matches;
+    let maximum = 0;
+    let offset = 0;
     let target = 0;
+    let speed = 0;
     let frame = 0;
     let lastFrame = 0;
-    let pointerId: number | null = null;
-    let startY = 0;
-    let startPosition = 0;
-    let moved = false;
-    let points: RecordedPoint[] = [];
-    let phase: Phase | null = null;
-    let mounted = true;
+    let pointer: number | null = null;
+    let pointerStart = 0;
+    let offsetStart = 0;
+    let dragged = false;
+    let samples: GestureSample[] = [];
+    let current: Position = "compact";
+    let alive = true;
 
-    function anchor(value: Snap) {
-      if (value === "expanded") return 0;
-      if (value === "peek") return max * 0.52;
-      return max;
-    }
+    const anchor = (p: Position) =>
+      p === "open" ? 0 : p === "peek" ? maximum * 0.52 : maximum;
 
-    function nearest(position: number): Snap {
-      return ORDER.reduce((best, candidate) =>
-        Math.abs(anchor(candidate) - position) < Math.abs(anchor(best) - position)
+    const closest = (value: number): Position =>
+      positions.reduce((best, candidate) =>
+        Math.abs(anchor(candidate) - value) < Math.abs(anchor(best) - value)
           ? candidate
           : best,
       );
-    }
-
-    function status(next: Phase) {
-      if (phase !== next && phaseRef.current) {
-        phaseRef.current.textContent = next;
-        phase = next;
-      }
-    }
 
     function paint() {
-      surface!.style.transform = "translate3d(0," + y.toFixed(2) + "px,0)";
-      const progress = max > 0 ? Math.max(0, Math.min(1, 1 - y / max)) : 0;
-      content!.style.opacity = String(Math.min(1, Math.max(0, (progress - 0.14) * 2.1)));
-      surface!.style.borderRadius = (24 + progress * 7).toFixed(2) + "px";
+      card!.style.transform = "translate3d(0," + offset.toFixed(2) + "px,0)";
+      const progress = maximum ? Math.max(0, Math.min(1, 1 - offset / maximum)) : 0;
+      body!.style.opacity = String(Math.max(0, Math.min(1, (progress - 0.19) * 2.7)));
     }
 
-    function cancelFrame() {
+    function cancelAnimation() {
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
       lastFrame = 0;
     }
 
-    function animate(timestamp: number) {
+    function tick(now: number) {
       frame = 0;
-      if (!mounted || pointerId !== null) return;
+      if (!alive || pointer !== null) return;
       if (reduceMotion) {
-        y = target;
-        velocity = 0;
+        offset = target;
+        speed = 0;
         paint();
-        status("READY");
         return;
       }
-      const dt = Math.min((timestamp - (lastFrame || timestamp)) / 1000, 0.034);
-      lastFrame = timestamp;
-      const preset = PRESETS[presetRef.current];
-      const acceleration = (target - y) * preset.stiffness - velocity * preset.damping;
-      velocity += acceleration * dt;
-      y += velocity * dt;
+      const dt = Math.min((now - (lastFrame || now)) / 1000, 0.025);
+      lastFrame = now;
+      const force = (target - offset) * 470 - speed * 39;
+      speed += force * dt;
+      offset += speed * dt;
+      if (Math.abs(target - offset) < 0.2 && Math.abs(speed) < 1) {
+        offset = target;
+        speed = 0;
+        paint();
+        return;
+      }
       paint();
-      if (Math.abs(target - y) <= 0.2 && Math.abs(velocity) <= 1) {
-        y = target;
-        velocity = 0;
-        paint();
-        status("READY");
-        return;
-      }
-      frame = requestAnimationFrame(animate);
+      frame = requestAnimationFrame(tick);
     }
 
-    function startAnimation() {
-      cancelFrame();
-      status("SETTLING");
-      frame = requestAnimationFrame(animate);
-    }
-
-    function navigate(next: Snap, initialVelocity = 0) {
-      snapRef.current = next;
-      setSnap(next);
+    function travel(next: Position, initialSpeed = 0) {
+      current = next;
+      setPosition(next);
       target = anchor(next);
-      velocity = reduceMotion ? 0 : initialVelocity;
+      speed = reduceMotion ? 0 : initialSpeed;
+      cancelAnimation();
       if (reduceMotion) {
-        cancelFrame();
-        y = target;
+        offset = target;
         paint();
-        status("READY");
       } else {
-        startAnimation();
+        frame = requestAnimationFrame(tick);
       }
     }
 
-    function onPointerDown(event: PointerEvent) {
-      if (pointerId !== null || (event.pointerType === "mouse" && event.button !== 0)) return;
-      pointerId = event.pointerId;
-      startY = event.clientY;
-      startPosition = y;
-      moved = false;
-      points = [{ y: event.clientY, t: performance.now() }];
-      if (frame) status("INTERRUPTED");
-      cancelFrame();
-      velocity = 0;
-      grip!.setPointerCapture(event.pointerId);
+    function pointerDown(event: PointerEvent) {
+      if (pointer !== null || (event.pointerType === "mouse" && event.button !== 0)) return;
+      pointer = event.pointerId;
+      pointerStart = event.clientY;
+      offsetStart = offset;
+      samples = [{ y: event.clientY, time: performance.now() }];
+      dragged = false;
+      speed = 0;
+      cancelAnimation();
+      handle!.setPointerCapture(event.pointerId);
     }
 
-    function onPointerMove(event: PointerEvent) {
-      if (event.pointerId !== pointerId) return;
-      const distance = event.clientY - startY;
-      if (Math.abs(distance) > 4) moved = true;
-      if (!moved) return;
-      y = elasticClamp(startPosition + distance, max);
+    function pointerMove(event: PointerEvent) {
+      if (pointer !== event.pointerId) return;
+      const displacement = event.clientY - pointerStart;
+      if (Math.abs(displacement) > 3) dragged = true;
+      if (!dragged) return;
+      offset = resistance(offsetStart + displacement, maximum);
       const now = performance.now();
-      points.push({ y: event.clientY, t: now });
-      points = points.filter((point) => now - point.t <= 90);
-      if (speedRef.current && points.length > 1) {
-        const first = points[0];
-        const seconds = Math.max(0.001, (now - first.t) / 1000);
-        speedRef.current.textContent = String(Math.round((event.clientY - first.y) / seconds)) + " px/s";
-      }
-      status("DRAGGING");
+      samples.push({ y: event.clientY, time: now });
+      samples = samples.filter((point) => now - point.time <= 95);
       paint();
     }
 
-    function release(event: PointerEvent, cancelled = false) {
-      if (event.pointerId !== pointerId) return;
-      pointerId = null;
-      if (grip!.hasPointerCapture(event.pointerId)) grip!.releasePointerCapture(event.pointerId);
-      if (!moved || cancelled) {
-        const next = !moved && !cancelled
-          ? ORDER[Math.max(0, ORDER.indexOf(snapRef.current) - 1)]
-          : nearest(y);
-        navigate(next);
+    function pointerEnd(event: PointerEvent, cancelled = false) {
+      if (pointer !== event.pointerId) return;
+      pointer = null;
+      if (handle!.hasPointerCapture(event.pointerId)) handle!.releasePointerCapture(event.pointerId);
+      if (cancelled) {
+        travel(closest(offset));
+        return;
+      }
+      if (!dragged) {
+        const index = positions.indexOf(current);
+        travel(positions[index === 0 ? 2 : index - 1]);
         return;
       }
       const now = performance.now();
-      points.push({ y: event.clientY, t: now });
-      const earliest = points[0];
-      const elapsed = Math.max(0.001, (now - earliest.t) / 1000);
-      const speed = (event.clientY - earliest.y) / elapsed;
-      const projected = y + speed * 0.11;
-      let next = nearest(projected);
-      if (Math.abs(speed) > 420) {
-        const current = nearest(y);
-        const index = ORDER.indexOf(current) + (speed > 0 ? 1 : -1);
-        next = ORDER[Math.max(0, Math.min(ORDER.length - 1, index))];
+      samples.push({ y: event.clientY, time: now });
+      const start = samples[0];
+      const dt = Math.max(0.001, (now - start.time) / 1000);
+      const velocity = Math.max(-1600, Math.min(1600, (event.clientY - start.y) / dt));
+      const projected = offset + velocity * 0.13;
+      let next = closest(projected);
+      if (Math.abs(velocity) > 700) {
+        const index = positions.indexOf(closest(offset)) + (velocity > 0 ? 1 : -1);
+        next = positions[Math.max(0, Math.min(positions.length - 1, index))];
       }
-      navigate(next, Math.max(-1500, Math.min(1500, speed)));
+      travel(next, velocity);
     }
 
-    function onPointerUp(event: PointerEvent) {
-      release(event);
+    function pointerUp(event: PointerEvent) { pointerEnd(event); }
+    function pointerCancel(event: PointerEvent) { pointerEnd(event, true); }
+    function captureLost(event: PointerEvent) {
+      if (pointer === event.pointerId) {
+        pointer = null;
+        travel(closest(offset));
+      }
     }
 
-    function onPointerCancel(event: PointerEvent) {
-      release(event, true);
-    }
-
-    function onLostCapture(event: PointerEvent) {
-      if (pointerId === event.pointerId) release(event, true);
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "ArrowUp") {
+    function keyDown(event: KeyboardEvent) {
+      let next: Position | undefined;
+      const index = positions.indexOf(current);
+      switch (event.key) {
+        case "ArrowUp": next = positions[Math.max(0, index - 1)]; break;
+        case "ArrowDown": next = positions[Math.min(2, index + 1)]; break;
+        case "Home": next = "open"; break;
+        case "End": case "Escape": next = "compact"; break;
+        case "Enter": case " ": next = current === "compact" ? "open" : "compact"; break;
+      }
+      if (next) {
         event.preventDefault();
-        navigate(ORDER[Math.max(0, ORDER.indexOf(snapRef.current) - 1)]);
-      } else if (event.key === "ArrowDown") {
-        event.preventDefault();
-        navigate(ORDER[Math.min(2, ORDER.indexOf(snapRef.current) + 1)]);
-      } else if (event.key === "Home") {
-        event.preventDefault();
-        navigate("expanded");
-      } else if (event.key === "End" || event.key === "Escape") {
-        event.preventDefault();
-        navigate("compact");
-      } else if (event.key === "Enter" || event.key === " ") {
-        event.preventDefault();
-        navigate(snapRef.current === "compact" ? "expanded" : "compact");
+        travel(next);
       }
     }
 
     function measure() {
-      max = Math.max(0, surface!.offsetHeight - 82);
-      target = anchor(snapRef.current);
-      if (pointerId === null) {
-        cancelFrame();
-        y = target;
-        velocity = 0;
+      maximum = Math.max(0, card!.offsetHeight - handle!.offsetHeight);
+      if (pointer === null) {
+        target = anchor(current);
+        offset = target;
+        speed = 0;
+        cancelAnimation();
         paint();
       }
     }
 
-    function onMotionPreference() {
-      reduceMotion = motionPreference.matches;
-      setReduced(reduceMotion);
-      if (reduceMotion && pointerId === null) {
-        cancelFrame();
-        y = target;
-        velocity = 0;
+    function motionChange() {
+      reduceMotion = reduce.matches;
+      if (reduceMotion && pointer === null) {
+        cancelAnimation();
+        offset = target;
+        speed = 0;
         paint();
-        status("READY");
       }
     }
 
-    grip.addEventListener("pointerdown", onPointerDown);
-    grip.addEventListener("pointermove", onPointerMove);
-    grip.addEventListener("pointerup", onPointerUp);
-    grip.addEventListener("pointercancel", onPointerCancel);
-    grip.addEventListener("lostpointercapture", onLostCapture);
-    grip.addEventListener("keydown", onKeyDown);
-    motionPreference.addEventListener("change", onMotionPreference);
-    const resizeObserver = new ResizeObserver(measure);
-    resizeObserver.observe(stage);
-    resizeObserver.observe(surface);
-    jumpRef.current = navigate;
-    setReduced(reduceMotion);
+    handle.addEventListener("pointerdown", pointerDown);
+    handle.addEventListener("pointermove", pointerMove);
+    handle.addEventListener("pointerup", pointerUp);
+    handle.addEventListener("pointercancel", pointerCancel);
+    handle.addEventListener("lostpointercapture", captureLost);
+    handle.addEventListener("keydown", keyDown);
+    reduce.addEventListener("change", motionChange);
+    const observer = new ResizeObserver(measure);
+    observer.observe(stage);
+    observer.observe(card);
+    navigateRef.current = (next) => travel(next);
     measure();
-    status("READY");
+
     return () => {
-      mounted = false;
-      cancelFrame();
-      resizeObserver.disconnect();
-      motionPreference.removeEventListener("change", onMotionPreference);
-      grip.removeEventListener("pointerdown", onPointerDown);
-      grip.removeEventListener("pointermove", onPointerMove);
-      grip.removeEventListener("pointerup", onPointerUp);
-      grip.removeEventListener("pointercancel", onPointerCancel);
-      grip.removeEventListener("lostpointercapture", onLostCapture);
-      grip.removeEventListener("keydown", onKeyDown);
-      jumpRef.current = () => {};
+      alive = false;
+      cancelAnimation();
+      observer.disconnect();
+      reduce.removeEventListener("change", motionChange);
+      handle.removeEventListener("pointerdown", pointerDown);
+      handle.removeEventListener("pointermove", pointerMove);
+      handle.removeEventListener("pointerup", pointerUp);
+      handle.removeEventListener("pointercancel", pointerCancel);
+      handle.removeEventListener("lostpointercapture", captureLost);
+      handle.removeEventListener("keydown", keyDown);
+      navigateRef.current = () => {};
     };
   }, []);
 
   return (
-    <main className="beetle-page">
-      <header className="beetle-topbar">
-        <div className="beetle-wordmark"><span aria-hidden="true">✳</span> continuity <span className="beetle-slash">/</span> beetle</div>
-        <a className="beetle-previous" href="/track">Track experiment <ArrowUpRight size={15} aria-hidden="true" /></a>
-      </header>
-
-      <section className="beetle-intro" aria-labelledby="beetle-heading">
-        <div className="beetle-eyebrow">EXPERIMENT 001 <span>•</span> DIRECT MANIPULATION</div>
-        <h1 id="beetle-heading">Beetle<span className="beetle-title-dot">.</span></h1>
-        <p>One surface. Three positions. Touch it, interrupt it, make it yours.</p>
-      </section>
-
-      <div className="beetle-shell">
-        <section className="beetle-stage" ref={stageRef} aria-label="Interactive Beetle surface laboratory">
-          <div className="beetle-stage-top">
-            <span>TACTILE SURFACE / 001</span>
-            <span className="beetle-phase" ref={phaseRef}>READY</span>
-          </div>
-          <div className="beetle-target" aria-hidden="true">
-            <div className="beetle-target-ring"><MoveVertical size={26} strokeWidth={1.2}/></div>
-            <span>DRAG THE HANDLE</span>
-            <small>Try to catch it mid-flight.</small>
-          </div>
-          <div className="beetle-surface" ref={surfaceRef} aria-label="Beetle surface" data-snap={snap}>
-            <div className="beetle-handle" ref={handleRef} role="button" tabIndex={0} aria-label="Move the Beetle surface; up and down arrows change position" aria-expanded={snap !== "compact"} aria-controls="beetle-inner">
-              <div className="beetle-handle-icon" aria-hidden="true"><MoveVertical size={21} strokeWidth={1.65} /></div>
-              <div className="beetle-handle-label"><strong>Beetle Surface</strong><small>Grab · release · interrupt</small></div>
-              <div className="beetle-handle-chevron" aria-hidden="true">{snap === "expanded" ? <ArrowDown size={19}/> : <ArrowUp size={19}/>}</div>
+    <main className="beetle-only">
+      <div className="beetle-stage" ref={stageRef}>
+        <div className="beetle-card" ref={cardRef} data-position={position}>
+          <Button
+            ref={handleRef}
+            type="button"
+            variant="ghost"
+            className="beetle-grip"
+            aria-expanded={position !== "compact"}
+            aria-controls="beetle-content"
+            aria-label="Beetle. Drag vertically or use arrow keys to change size."
+          >
+            <span className="beetle-mark" aria-hidden="true">
+              <svg viewBox="0 0 32 32" width="26" height="26" fill="none">
+                <path d="M16 3.5 19.4 12.6 28.5 16 19.4 19.4 16 28.5 12.6 19.4 3.5 16 12.6 12.6 16 3.5Z" fill="currentColor" />
+                <circle cx="16" cy="16" r="2.3" fill="#171717"/>
+              </svg>
+            </span>
+            <span className="beetle-heading">
+              <strong>Beetle</strong>
+              <small>{position === "compact" ? "Drag to open" : position === "peek" ? "Keep going" : "Pull down to close"}</small>
+            </span>
+            <span className="beetle-direction" aria-hidden="true">{position === "open" ? <ArrowDown size={18}/> : <ArrowUp size={18}/>}</span>
+          </Button>
+          <div id="beetle-content" ref={bodyRef} className="beetle-content" inert={position === "compact"}>
+            <div className="beetle-art" aria-hidden="true">
+              <div className="beetle-orbit beetle-orbit-one"/>
+              <div className="beetle-orbit beetle-orbit-two"/>
+              <svg viewBox="0 0 100 100" width="74" height="74" fill="none" aria-hidden="true">
+                <path d="M50 8 60.6 39.4 92 50 60.6 60.6 50 92 39.4 60.6 8 50 39.4 39.4 50 8Z" fill="currentColor"/>
+                <circle cx="50" cy="50" r="7.5" fill="#dcdcdc"/>
+              </svg>
             </div>
-            <div id="beetle-inner" className="beetle-inner" ref={contentRef} inert={snap === "compact"}>
-              <div className="beetle-hero">
-                <div className="beetle-hero-index">BEETLE / INTERACTION STUDY</div>
-                <div className="beetle-hero-title">Motion you<br/>can <em>interrupt.</em></div>
-                <p>This is not a drawer library. It is a test of touch, momentum, and how a web surface responds when you change your mind.</p>
+            <div className="beetle-content-bottom">
+              <span className="beetle-index">001 / BEETLE</span>
+              <div className="beetle-statement">Feel the<br/><em>movement.</em></div>
+              <div className="beetle-bottom-bar">
+                <span>Touch · release · interrupt</span>
+                <Button type="button" variant="outline" className="beetle-collapse" onClick={() => navigateRef.current("compact")} aria-label="Collapse Beetle">
+                  <MoveUpRight size={16} aria-hidden="true" />
+                </Button>
               </div>
-              <Tabs.Root defaultValue="behavior" className="beetle-tabs">
-                <Tabs.List className="beetle-tabs-list" aria-label="Inspect the experiment">
-                  <Tabs.Tab value="behavior" className="beetle-tab">Behavior</Tabs.Tab>
-                  <Tabs.Tab value="anatomy" className="beetle-tab">Anatomy</Tabs.Tab>
-                </Tabs.List>
-                <Tabs.Panel value="behavior" className="beetle-tab-panel">
-                  <div className="beetle-detail-row"><span>Direct manipulation</span><strong>pointer events</strong></div>
-                  <div className="beetle-detail-row"><span>Animation</span><strong>spring / RAF</strong></div>
-                  <div className="beetle-detail-row"><span>Coordinates</span><strong>transform only</strong></div>
-                  <div className="beetle-detail-row"><span>Accessibility</span><strong>keyboard + reduce</strong></div>
-                </Tabs.Panel>
-                <Tabs.Panel value="anatomy" className="beetle-tab-panel">
-                  <p className="beetle-anatomy-copy">Base UI provides the accessible tabs and buttons. The gesture loop is deliberately isolated from React rendering, inspired by UI SDK&apos;s behavior-first architecture.</p>
-                  <p className="beetle-anatomy-copy">No public Beetle API yet. No extra animation runtime. This is research, not a replacement for Base UI or Motion.</p>
-                </Tabs.Panel>
-              </Tabs.Root>
             </div>
           </div>
-        </section>
-
-        <section className="beetle-controls" aria-label="Experiment controls">
-          <div className="beetle-control-group">
-            <div className="beetle-control-heading"><span>01 / Position</span><span>THREE SNAP POINTS</span></div>
-            <div className="beetle-control-buttons" role="group" aria-label="Move to position">
-              {(["compact", "peek", "expanded"] as Snap[]).map((value) =>
-                <Button type="button" key={value} variant={snap === value ? "secondary" : "outline"} aria-pressed={snap === value} onClick={() => jumpRef.current(value)}>{value}</Button>
-              )}
-            </div>
-          </div>
-          <div className="beetle-control-group">
-            <div className="beetle-control-heading"><span>02 / Physics</span><span>SPRING PRESETS</span></div>
-            <div className="beetle-control-buttons" role="group" aria-label="Spring preset">
-              {(["precise", "soft", "elastic"] as Feel[]).map((value) =>
-                <Button type="button" key={value} variant={feel === value ? "secondary" : "outline"} aria-pressed={feel === value} onClick={() => setFeel(value)}>{value}</Button>
-              )}
-            </div>
-          </div>
-        </section>
-        <div className="beetle-footnote">
-          <div><span className="beetle-footnote-label">LAST GESTURE</span><strong ref={speedRef}>— px/s</strong></div>
-          <div><span className="beetle-footnote-label">SYSTEM MOTION</span><strong>{reduced ? "REDUCED" : "ENABLED"}</strong></div>
-          <Button type="button" size="sm" variant="ghost" onClick={() => jumpRef.current("compact")}><RotateCcw size={14} aria-hidden="true"/> Reset</Button>
         </div>
       </div>
-      <footer className="beetle-footer">
-        <span>Built on Base UI · UI SDK behavior model</span>
-        <span>Swipe, tap, or use <CornerDownLeft size={12} aria-label="Enter"/> and arrow keys.</span>
-      </footer>
     </main>
   );
 }
