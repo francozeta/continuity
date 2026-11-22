@@ -27,6 +27,15 @@ arrow keys, Previous, Next, Close and Escape provide alternatives. [Experiment 0
   A tap on the photo itself does nothing; a horizontal drag from the empty
   area still pages or dismisses at an edge. The toolbar and its controls
   remain independent.
+- Photo ownership is exclusive: the selected grid image stays `visibility: hidden`
+  throughout the entire viewer session, including while paging and after
+  opening settles. A separate projection is used only while morphing between
+  the tile and viewer. Previously `clearProjection()` also revealed the tile
+  as soon as the open animation finished; on the user's iPhone, the source and
+  viewer could be composited simultaneously. On close, the viewer rail exits
+  paint first and then the source is revealed. Newly added automated tests
+  check the stable open state, selection changes, close, and repeat opening;
+  physical Safari verification is still required.
 - During a transition, the viewer lays out its photo layer once the thumbnail
   is hidden and the projection is positioned. On close, the layer leaves
   layout before the thumbnail returns, with the final transform held until
