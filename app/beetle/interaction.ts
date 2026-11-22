@@ -1,11 +1,11 @@
-import { bindDrag } from "@ui-sdk/core";
-import { createVelocityTracker, projectDistance, solveSpring } from "@ui-sdk/core/gesture";
+import { projectDistance } from "@ui-sdk/core/gesture";
+import { createHorizontalDrag } from "./horizontal-drag";
+import { createBeetleSpring } from "./spring";
 
 const COMPACT = 0;
 const PREVIEW = 1;
 const EXPANDED = 2;
 const DRAG_STEP = 112;
-const SLOP = 8;
 
 type Stage = typeof COMPACT | typeof PREVIEW | typeof EXPANDED;
 type Bounds = { x: number; y: number; width: number; height: number };
@@ -30,9 +30,8 @@ export function createBeetleInteraction({
   resize: (expanded: boolean) => void;
   close: () => void;
 }) {
-  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-  const tracker = createVelocityTracker({ maxSpeed: 1.5 });
-  const listeners = new AbortController();
+  const drag = createHorizontalDrag();
+  const spring = createBeetleSpring();
   let surface: Surface | null = null;
   let source: HTMLElement | null = null;
   let bounds: [Bounds, Bounds, Bounds] | null = null;
@@ -40,9 +39,6 @@ export function createBeetleInteraction({
   let progress = 0;
   let target: Stage = COMPACT;
   let moving = false;
-  let frame = 0;
-  let gesture: { down: PointerEvent; cancel: () => void; stop: () => void } | null = null;
-  let canceledPointer: number | null = null;
 
   function paint() {
     if (!surface || !bounds) return;
@@ -104,11 +100,6 @@ export function createBeetleInteraction({
     setLayoutHeight();
   }
 
-  function stopFrame() {
-    cancelAnimationFrame(frame);
-    frame = 0;
-  }
-
   function finish() {
     progress = target;
     setMoving(false);
@@ -129,30 +120,19 @@ export function createBeetleInteraction({
   }
 
   function settle(next: Stage, velocity = 0) {
-    stopFrame();
     target = next;
     if (next !== COMPACT) resize(next === EXPANDED);
-    if (reduceMotion.matches || Math.abs(progress - next) < 0.002) {
-      finish();
-      return;
-    }
-
-    setMoving(true);
-    const spring = solveSpring(0.3, 1, (progress - next) * DRAG_STEP, velocity);
-    const started = performance.now();
-    function tick(now: number) {
-      frame = 0;
-      const elapsed = Math.max(0, now - started);
-      const distance = spring.position(elapsed);
-      if (Math.abs(distance) < 0.3 && Math.abs(spring.velocity(elapsed)) < 0.02) {
-        finish();
-        return;
-      }
-      progress = clamp(next + distance / DRAG_STEP, EXPANDED);
-      paint();
-      frame = requestAnimationFrame(tick);
-    }
-    frame = requestAnimationFrame(tick);
+    spring.settle({
+      from: progress * DRAG_STEP,
+      to: next * DRAG_STEP,
+      velocity,
+      start: () => setMoving(true),
+      paint(position) {
+        progress = clamp(position / DRAG_STEP, EXPANDED);
+        paint();
+      },
+      done: finish,
+    });
   }
 
   function lift(row: HTMLElement) {
@@ -161,111 +141,38 @@ export function createBeetleInteraction({
   }
 
   function press(row: HTMLElement) {
-    if (source || gesture) return;
+    if (source || drag.active) return;
     lift(row);
     settle(PREVIEW);
   }
 
   function startDrag(element: HTMLElement, down: PointerEvent, fromRow: boolean) {
-    if (gesture || !down.isPrimary || down.button !== 0 || (fromRow ? source : !source)) return;
-
-    // Hold the last painted position on contact, even before this press wins
-    // the axis. A tap or a native scroll can resume the interrupted settle.
-    stopFrame();
+    if (fromRow ? source : !source) return;
     const previousTarget = target;
-    const dragListeners = new AbortController();
-    let claimed = false;
-    let lastX = down.clientX;
-    tracker.reset();
-    tracker.add(down.timeStamp, lastX);
-
-    function move(x: number, time: number) {
-      // Integrating deltas makes a reversal leave either end immediately,
-      // even after the finger kept going past the available travel.
-      progress = clamp(progress + (lastX - x) / DRAG_STEP, EXPANDED);
-      lastX = x;
-      tracker.add(time, x);
-      paint();
-    }
-
-    function stop() {
-      dragListeners.abort();
-      gesture = null;
-      unbind();
-    }
-
-    function cancel() {
-      canceledPointer = down.pointerId;
-      stop();
+    const resume = () => {
       if (source && moving) settle(previousTarget);
-    }
-
-    const unbind = bindDrag(element, down, {
-      threshold: SLOP,
-      onStart(event) {
-        const dx = event.clientX - down.clientX;
-        const dy = event.clientY - down.clientY;
-        claimed = Math.abs(dx) > Math.abs(dy) && (!fromRow || dx < 0);
-        // Let the binding finish a rejected press so it can suppress its
-        // drag click. The browser can still take over a vertical touch.
-        if (!claimed) return;
-        if (fromRow) lift(element);
-        setMoving(true);
-      },
-      onMove(sample) {
-        if (claimed) move(sample.x, sample.event.timeStamp);
-      },
-      onEnd(event, canceled) {
-        dragListeners.abort();
-        gesture = null;
-        if (!source) return;
-        if (canceled || !claimed) {
-          if (moving) settle(previousTarget);
-          return;
-        }
-
-        if (event.clientX !== lastX) move(event.clientX, event.timeStamp);
-        const velocity = -tracker.velocity(event.timeStamp);
-        const projected = progress + projectDistance(velocity, 0.985) / DRAG_STEP;
-        const next = Math.round(clamp(projected, EXPANDED)) as Stage;
-        settle(next, velocity);
-      },
-      cancelOnEscape: true,
-    });
-    gesture = { down, cancel, stop };
-
-    const options = { signal: dragListeners.signal };
-    element.addEventListener("lostpointercapture", (event) => {
-      if (event.target === element && event.pointerId === down.pointerId) cancel();
-    }, options);
-    window.addEventListener("blur", cancel, options);
-    document.addEventListener("visibilitychange", () => {
-      if (document.hidden) cancel();
-    }, options);
+    };
+    const started = drag.start(element, down, (direction) => {
+      if (fromRow && direction > 0) return;
+      if (fromRow) lift(element);
+      setMoving(true);
+      return {
+        move(deltaX) {
+          // Integrating deltas lets a reversal leave either end immediately.
+          progress = clamp(progress - deltaX / DRAG_STEP, EXPANDED);
+          paint();
+        },
+        release(velocityX) {
+          const velocity = -velocityX;
+          const projected = progress + projectDistance(velocity, 0.985) / DRAG_STEP;
+          settle(Math.round(clamp(projected, EXPANDED)) as Stage, velocity);
+        },
+        cancel: resume,
+      };
+    }, resume);
+    // A new press holds the last painted position, even before it wins the axis.
+    if (started) spring.stop();
   }
-
-  document.addEventListener("pointerdown", (event) => {
-    if (event.isPrimary) canceledPointer = null;
-    if (gesture?.down.pointerType === "touch" && event.pointerType === "touch" &&
-        event.pointerId !== gesture.down.pointerId) {
-      gesture.cancel();
-    }
-  }, { capture: true, signal: listeners.signal });
-
-  document.addEventListener("click", (event) => {
-    if (canceledPointer === null || event.detail === 0) return;
-    if (event instanceof PointerEvent && event.pointerId !== canceledPointer) return;
-    canceledPointer = null;
-    event.preventDefault();
-    event.stopPropagation();
-  }, { capture: true, signal: listeners.signal });
-
-  reduceMotion.addEventListener("change", () => {
-    if (reduceMotion.matches && frame) {
-      stopFrame();
-      finish();
-    }
-  }, { signal: listeners.signal });
 
   return {
     attach(elements: Surface) {
@@ -287,25 +194,21 @@ export function createBeetleInteraction({
     startDrag,
     toggle() {
       if (!source) return;
-      if (gesture) {
-        canceledPointer = gesture.down.pointerId;
-        gesture.stop();
-      }
+      drag.stop();
       settle(target === EXPANDED ? PREVIEW : EXPANDED);
     },
     dismiss(escape: boolean) {
       if (!source) return;
-      if (gesture) {
-        gesture.cancel();
+      if (drag.active) {
+        drag.cancel();
         if (escape || !source) return;
       }
       if (escape && target === COMPACT && moving) return;
       settle(escape && target === EXPANDED ? PREVIEW : COMPACT);
     },
     destroy() {
-      listeners.abort();
-      gesture?.stop();
-      stopFrame();
+      drag.destroy();
+      spring.destroy();
       source?.removeAttribute("data-lifted");
     },
   };
